@@ -1,11 +1,14 @@
-# Manual GTM em HTML
+# Manual GTM — versão atualizada
 
-Este projeto mantém os textos na mesma ordem do PDF original.
+Esta versão mantém o novo visual profissional e usa:
+
+- os textos do HTML enviado;
+- a identidade Cidade de Haze;
+- os créditos atualizados;
+- as imagens enviadas para abordagem, patrulhamento, estacionamento, logo e encerramento.
 
 ## Publicar no GitHub Pages
 
-1. Envie `index.html`, `style.css` e a pasta `assets` para o repositório.
-2. Abra **Settings > Pages**.
-3. Em **Build and deployment**, escolha **Deploy from a branch**.
-4. Selecione `main` e `/root`.
-5. Salve e aguarde a geração do link.
+1. Envie `index.html`, `style.css`, `script.js` e a pasta `assets`.
+2. Confirme o commit na branch `main`.
+3. O GitHub Pages atualizará automaticamente.

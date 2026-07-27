@@ -1,129 +1,221 @@
-
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Manual de Conduta - G.T.M.</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b0f">
+  <meta name="description" content="Manual de Conduta do Grupamento Tático de Motocicletas — Cidade de Haze.">
+  <title>Manual de Conduta — G.T.M.</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="layout">
-<aside class="sidebar">
-  <div class="brand">
-    <img src="assets/logo.png" alt="Logo G.T.M.">
-    <h1>Manual de Conduta - G.T.M.</h1>
-    <p>Cidade de Haze</p>
-  </div>
-  <nav>
-    <a href="#inicio">Início</a>
-    <a href="#introducao">1. Introdução</a>
-    <a href="#regras">2. Regras</a>
-    <a href="#funcoes">3. Funções</a>
-    <a class="sub" href="#p1">Moto Primária (P1)</a>
-    <a class="sub" href="#p2">Moto Secundária (P2)</a>
-    <a class="sub" href="#p3">Moto Terciária (P3)</a>
-    <a href="#modulacao">4. Modulação</a>
-    <a class="sub" href="#pr">4.1 Comunicação no /pr</a>
-    <a class="sub" href="#central">4.2 Comunicação na Central</a>
-    <a href="#posicionamento">5. Posicionamento</a>
-    <a class="sub" href="#patrulhamento">5.1 Durante patrulhamento</a>
-    <a class="sub" href="#abordagem">5.2 Durante abordagem</a>
-    <a class="sub" href="#alto-risco">5.2.1 Alto risco</a>
-    <a class="sub" href="#estacionamento">5.3 Estacionamento</a>
-    <a href="#encerramento">Encerramento</a>
-  </nav>
-</aside>
+  <div class="reading-progress" id="readingProgress"></div>
 
-<main>
-  <header class="hero" id="inicio">
-    <img src="assets/logo.png" alt="Logo G.T.M.">
-    <h1>Manual de Conduta - G.T.M.</h1>
-    <h2>Cidade de Haze</h2>
-    <small>Criado por Razor Brito</small>
-  </header>
+  <button class="mobile-menu" id="mobileMenu" aria-label="Abrir menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
 
-  <section id="introducao">
-    <h2>1. Introdução</h2>
-    <p>O manual de conduta do 2ºESQ/GTM tem como objetivo centralizar toda informação necessária para conscritos, estagiários e pilotos oficiais da G.T.M., para a melhor absorção de conhecimento dos procedimentos e regras do grupamento.</p>
-    <p>O 2ºESQ/GTM tem prioridade em acompanhamentos à motocicletas. Caso o acompanhamento seja contra um veículo quatro rodas a prioridade é da G.R.R., salvo exceções de veículos de pequeno porte, ou caso a primária peça para a unidade G.T.M. manter a primária do acompanhamento;</p>
-  </section>
+  <div class="backdrop" id="backdrop"></div>
 
-  <section id="regras">
-    <h2>2.Regras</h2>
-    <div class="rule">1 - Toda e qualquer queda, o oficial do grupamento deverá dar QTA, caso volte a QRU poderá ser retirado de suas funções como oficial da G.T.M.;</div>
-    <div class="rule">2 - A utilização das motos Africa Twin e MT-07 é exclusivamente proibida para as demais unidades e membros não pertencentes à unidade G.T.M.;</div>
-    <div class="rule">3 - É totalmente proibido a utilização da manobra Roadblock(utilização da moto como barreira para dificultar a passagem);</div>
-    <div class="rule">4 - É proibido empinar a motocicleta;</div>
-    <div class="rule">5 - Fica proibido o patrulhamento diário com garupa, cada membro da unidade deve utilizar a sua motocicleta. Salvo em algumas situações(Ex.: Cidade em Cód. Vermelho) e com autorização prévia do COMANDO da unidade;</div>
-    <div class="rule">6 - Estagiários somente poderão patrulhar na presença de algum Piloto Oficial. Sendo assim, fica estritamente proibida a patrulha de 2 estagiários;</div>
-    <div class="rule">7 - Em acompanhamento a veículo quatro rodas, a unidade G.T.M. deve se manter na função de unidade secundária da QRU;</div>
-    <div class="rule">8 - Caso vá prestar concurso/formulário de outro Grupamento operacional, como COE, GRR ou GRA, deverá pedir baixa do G.T.M.;</div>
-  </section>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#inicio">
+      <img src="assets/logo.png" alt="Logo do G.T.M. Haze">
+      <strong>G.T.M. Haze</strong>
+      <small>Manual de Conduta</small>
+    </a>
 
-  <section id="funcoes">
-    <h2>3.Funções</h2>
-    <p>Uma unidade G.T.M. pode ser composta por até três motocicletas, onde cada uma tem sua função:</p>
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
+      <input id="searchInput" type="search" placeholder="Pesquisar no manual..." autocomplete="off">
+      <kbd>Ctrl K</kbd>
+    </div>
+    <div class="search-results" id="searchResults" hidden></div>
 
-    <h3 id="p1">1 - Moto Primária(P1):</h3>
-    <p>Tem como principal função a coordenação da Unidade em que está, é quem decide o destino da unidade, a quem abordar e quais ocorrências assumir. A moto primária é sempre composta pelo Piloto mais experiente da unidade.</p>
-    <p>Nos acompanhamentos, tem como função manter sempre o visual do veículo em que está acompanhando e, caso esteja sozinho, também exerce a função de modular a QRU.</p>
+    <nav id="navigation" aria-label="Navegação do manual">
+      <p class="nav-label">Manual</p>
+      <a href="#inicio">Início</a>
+      <a href="#introducao">1. Introdução</a>
+      <a href="#regras">2. Regras</a>
+      <a href="#funcoes">3. Funções</a>
 
-    <h3 id="p2">2 - Moto Secundária(P2):</h3>
-    <p>Tem como principal função o auxílio ao coordenador, ou seja, irá assumir toda e qualquer responsabilidade atribuída ao mesmo, seja abordagem, modulação ou qualquer outra ordem, também é responsável pelo cuidado do perímetro durante determinadas ocasiões.</p>
-    <p>Nos acompanhamentos, tem como principal função a modulação. Também é responsável pelo adiantamento nos becos e sempre deve estar em alerta para assumir caso aconteça algo com o P1.</p>
+      <p class="nav-label">Estrutura operacional</p>
+      <a class="sub" href="#p1">Moto Primária — P1</a>
+      <a class="sub" href="#p2">Moto Secundária — P2</a>
+      <a class="sub" href="#p3">Moto Terciária — P3</a>
 
-    <h3 id="p3">3 - Moto Terciária(P3):</h3>
-    <p>Tem como principal função cuidar da retaguarda da unidade durante o patrulhamento. Geralmente composta pelo Piloto mais inexperiente ou estagiário, tem obrigação de acatar toda e qualquer ordem dada pelo coordenador da unidade.</p>
-    <p>Nos acompanhamentos, sua principal função é o adiantamento de becos. Sempre atento e auxiliando o P1 e P2.</p>
-  </section>
+      <p class="nav-label">Comunicação</p>
+      <a href="#modulacao">4. Modulação</a>
+      <a class="sub" href="#pr">4.1 Comunicação no /pr</a>
+      <a class="sub" href="#central">4.2 Comunicação na Central</a>
 
-  <section id="modulacao">
-    <h2>4. Modulação</h2>
-    <p>Parte vital do trabalho militar dentro do DPJ, a modulação é algo muito prezado dentro do 2ºESQ/GTM, por isso alguns padrões são criados para que a qualidade da mesma seja mantida dentro do grupamento.</p>
+      <p class="nav-label">Procedimentos</p>
+      <a href="#posicionamento">5. Posicionamento</a>
+      <a class="sub" href="#patrulhamento">5.1 Durante patrulhamento</a>
+      <a class="sub" href="#abordagem">5.2 Durante abordagem</a>
+      <a class="sub" href="#alto-risco">5.2.1 Alto risco</a>
+      <a class="sub" href="#estacionamento">5.3 Estacionamento</a>
+      <a href="#encerramento">Encerramento</a>
+    </nav>
 
-    <h3 id="pr">4.1 - Comunicação no /pr</h3>
-    <p>O chat da polícia é utilizado para passarmos informações que não são necessárias serem passadas na rádio, segue alguns exemplos da utilização do /pr pela GTM.</p>
-    <p>Entrada em serviço: QAP Central, 3° Sargento Neto (Comando 2°ESQ/GTM-DPJ) iniciando serviço!</p>
-    <p>Saída de serviço: QAP Central, 3° Sargento Neto (Comando 2°ESQ/GTM-DPJ) indo de QTX!</p>
+    <div class="sidebar-footer">
+      <span>Documento oficial</span>
+      <span class="status-dot">Atualizado</span>
+    </div>
+  </aside>
 
-    <h3 id="central">4.2 - Comunicação na Central</h3>
-    <p>A modulação deverá ser curta e breve na central, para que os GTMs tenham foco no acompanhamento, modulando apenas o necessário, é papel do piloto julgar quando é necessário a modulação durante o acompanhamento.</p>
-    <p>Modulação de deslocamento: QAP Central, Unidade GTM, QTI do Caixa Eletrônico, (X) metros/km.</p>
-    <p>Estabelecer a comunicação na central, informar a unidade que está a caminho (2 motos = Equipe e 3 motos = 1 Unidade), caso esteja sozinho informe que uma GTM está QTI.</p>
-    <p>Modulação de Acompanhamento: QAP Central, Akuma na praça, sentido Sport Race;</p>
-    <p>Estabeleça o contato com a central, informe QTH atual, informe QTH futuro, caso mude o rumo corrija a informação.</p>
-  </section>
+  <main>
+    <section class="hero" id="inicio" data-title="Início">
+      <div class="hero-glow"></div>
+      <img class="hero-logo" src="assets/logo.png" alt="Logo G.T.M. Haze">
+      <p class="eyebrow">GRUPAMENTO TÁTICO DE MOTOCICLETAS</p>
+      <h1>Manual de Conduta — G.T.M.</h1>
+      <h2>Cidade de Haze</h2>
+      <p class="credit">Criado por Razor Brito</p>
+      <a class="primary-button" href="#introducao">Acessar manual <span>→</span></a>
+      <div class="scroll-hint">Role para consultar</div>
+    </section>
 
-  <section id="posicionamento">
-    <h2>5. Posicionamento</h2>
+    <article class="content-shell">
+      <section class="manual-section" id="introducao" data-title="1. Introdução">
+        <div class="section-heading">
+          <span class="section-number">01</span>
+          <div><p>APRESENTAÇÃO</p><h2>1. Introdução</h2></div>
+        </div>
+        <p>O manual de conduta do 2ºESQ/GTM tem como objetivo centralizar toda informação necessária para conscritos, estagiários e pilotos oficiais da G.T.M., para a melhor absorção de conhecimento dos procedimentos e regras do grupamento.</p>
+        <p>O 2ºESQ/GTM tem prioridade em acompanhamentos à motocicletas. Caso o acompanhamento seja contra um veículo quatro rodas a prioridade é da G.R.R., salvo exceções de veículos de pequeno porte, ou caso a primária peça para a unidade G.T.M. manter a primária do acompanhamento;</p>
+      </section>
 
-    <h3 id="patrulhamento">5.1 - Durante patrulhamento</h3>
-    <p>A formação de uma unidade do Grupamento Tático de Motocicletas consiste em até 3 motos. Independente se duas ou três, todas devem manter o formato “serrote” onde a primeira moto fica sempre à direita da via, a segunda deve manter um pouco atrás e para a esquerda, e caso tenha a terceira, ela se mantém atrás da segunda moto, alinhada com a primeira moto.</p>
-    <div class="figure"><img src="assets/patrulhamento.png" alt="Formação em serrote"></div>
-    <p>Este padrão deve sempre ser mantido, visando a segurança de todas as motos em qualquer tipo de situação. Nesta formação, é possível realizar qualquer tipo de manobra sem que a outra corra risco.</p>
+      <section class="manual-section" id="regras" data-title="2. Regras">
+        <div class="section-heading">
+          <span class="section-number">02</span>
+          <div><p>NORMAS DA UNIDADE</p><h2>2.Regras</h2></div>
+        </div>
+        <ol class="rules-list">
+          <li>Toda e qualquer queda, o oficial do grupamento deverá dar QTA, caso volte a QRU poderá ser retirado de suas funções como oficial da G.T.M.;</li>
+          <li>A utilização das motos Africa Twin e MT-07 é exclusivamente proibida para as demais unidades e membros não pertencentes à unidade G.T.M.;</li>
+          <li>É totalmente proibido a utilização da manobra Roadblock(utilização da moto como barreira para dificultar a passagem);</li>
+          <li>É proibido empinar a motocicleta;</li>
+          <li>Fica proibido o patrulhamento diário com garupa, cada membro da unidade deve utilizar a sua motocicleta. Salvo em algumas situações(Ex.: Cidade em Cód. Vermelho) e com autorização prévia do COMANDO da unidade;</li>
+          <li>Estagiários somente poderão patrulhar na presença de algum Piloto Oficial. Sendo assim, fica estritamente proibida a patrulha de 2 estagiários;</li>
+          <li>Em acompanhamento a veículo quatro rodas, a unidade G.T.M. deve se manter na função de unidade secundária da QRU;</li>
+          <li>Caso vá prestar concurso/formulário de outro Grupamento operacional, como COE, GRR ou GRA, deverá pedir baixa do G.T.M.;</li>
+        </ol>
+      </section>
 
-    <h3 id="abordagem">5.2 - Durante abordagem</h3>
-    <p>Antes de qualquer abordagem, o P1 irá decidir a quem abordar e o P2 irá modular enquanto o P1 dá a voz e realiza os primeiros procedimentos, e o P3 fará o perímetro.</p>
-    <p>Durante a abordagem, as motos realizarão uma formação em “L”, onde a primeira moto posicionará na lateral do veículo, a segunda na diagonal e a terceira logo atrás do veículo, sempre de olho na retaguarda. Segue o exemplo na imagem abaixo:</p>
-    <div class="figure"><img src="assets/abordagem.png" alt="Formação em L"></div>
-    <p>Vale ressaltar que esta formação deve ser seguida à risca, pois garantirá a segurança de todos os membros da unidade e dará liberdade para efetuar qualquer disparo se necessário, evitando qualquer fogo amigo. No caso de fuga da abordagem, todas as motos estão bem posicionadas evitando qualquer tipo de atraso no seu embarque.</p>
+      <section class="manual-section" id="funcoes" data-title="3. Funções">
+        <div class="section-heading">
+          <span class="section-number">03</span>
+          <div><p>COMPOSIÇÃO DA UNIDADE</p><h2>3.Funções</h2></div>
+        </div>
+        <p>Uma unidade G.T.M. pode ser composta por até três motocicletas, onde cada uma tem sua função:</p>
 
-    <h3 id="alto-risco">5.2.1 - Durante abordagem de alto risco</h3>
-    <p>O posicionamento será no mesmo padrão em “L” (citado acima), porém as motos irão ficar rotacionando no próprio eixo e apontando arma. Sempre em movimento, nunca parado.</p>
+        <div class="role-grid">
+          <div class="role-card" id="p1" data-title="Moto Primária (P1)">
+            <span>P1</span>
+            <h3>1 - Moto Primária(P1):</h3>
+            <p>Tem como principal função a coordenação da Unidade em que está, é quem decide o destino da unidade, a quem abordar e quais ocorrências assumir. A moto primária é sempre composta pelo Piloto mais experiente da unidade.</p>
+            <p>Nos acompanhamentos, tem como função manter sempre o visual do veículo em que está acompanhando e, caso esteja sozinho, também exerce a função de modular a QRU.</p>
+          </div>
 
-    <h3 id="estacionamento">5.3 - Estacionamento</h3>
-    <p>Ao efetuar o estacionamento das motocicletas, todas deverão manter com as duas rodas no mesmo lugar (Ex.: Roda dianteira na rua, roda traseira também. Roda dianteira na calçada, roda traseira também) e não com uma roda na rua e a outra na calçada. Assim como mostra a imagem abaixo:</p>
-    <div class="figure"><img src="assets/estacionamento.png" alt="Estacionamento das motocicletas"></div>
-    <p>Esse padrão deve ser sempre seguido.</p>
-  </section>
+          <div class="role-card" id="p2" data-title="Moto Secundária (P2)">
+            <span>P2</span>
+            <h3>2 - Moto Secundária(P2):</h3>
+            <p>Tem como principal função o auxílio ao coordenador, ou seja, irá assumir toda e qualquer responsabilidade atribuída ao mesmo, seja abordagem, modulação ou qualquer outra ordem, também é responsável pelo cuidado do perímetro durante determinadas ocasiões.</p>
+            <p>Nos acompanhamentos, tem como principal função a modulação. Também é responsável pelo adiantamento nos becos e sempre deve estar em alerta para assumir caso aconteça algo com o P1.</p>
+          </div>
 
-  <section id="encerramento">
-    <div class="figure"><img src="assets/encerramento.png" alt="Encerramento do manual"></div>
-    <div class="quote">“Se você fugir, eu corro atrás. Se você me enfrentar, eu luto com você. Se atirar em mim, eu atiro de volta.’’</div>
-    <div class="footer">Manual de Conduta do Grupamento Tático de Motocicletas<br>criado por Brito<br>desenvolvido para a Cidade Haze</div>
-  </section>
-</main>
-</div>
+          <div class="role-card" id="p3" data-title="Moto Terciária (P3)">
+            <span>P3</span>
+            <h3>3 - Moto Terciária(P3):</h3>
+            <p>Tem como principal função cuidar da retaguarda da unidade durante o patrulhamento. Geralmente composta pelo Piloto mais inexperiente ou estagiário, tem obrigação de acatar toda e qualquer ordem dada pelo coordenador da unidade.</p>
+            <p>Nos acompanhamentos, sua principal função é o adiantamento de becos. Sempre atento e auxiliando o P1 e P2.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="manual-section" id="modulacao" data-title="4. Modulação">
+        <div class="section-heading">
+          <span class="section-number">04</span>
+          <div><p>COMUNICAÇÃO OPERACIONAL</p><h2>4. Modulação</h2></div>
+        </div>
+        <p>Parte vital do trabalho militar dentro do DPJ, a modulação é algo muito prezado dentro do 2ºESQ/GTM, por isso alguns padrões são criados para que a qualidade da mesma seja mantida dentro do grupamento.</p>
+
+        <div class="topic-block" id="pr" data-title="4.1 Comunicação no /pr">
+          <h3>4.1 - Comunicação no /pr</h3>
+          <p>O chat da polícia é utilizado para passarmos informações que não são necessárias serem passadas na rádio, segue alguns exemplos da utilização do /pr pela GTM.</p>
+          <div class="radio-example"><small>Entrada em serviço</small><p>QAP Central, 3° Sargento Neto (Comando 2°ESQ/GTM-DPJ) iniciando serviço!</p></div>
+          <div class="radio-example"><small>Saída de serviço</small><p>QAP Central, 3° Sargento Neto (Comando 2°ESQ/GTM-DPJ) indo de QTX!</p></div>
+        </div>
+
+        <div class="topic-block" id="central" data-title="4.2 Comunicação na Central">
+          <h3>4.2 - Comunicação na Central</h3>
+          <p>A modulação deverá ser curta e breve na central, para que os GTMs tenham foco no acompanhamento, modulando apenas o necessário, é papel do piloto julgar quando é necessário a modulação durante o acompanhamento.</p>
+          <div class="radio-example"><small>Modulação de deslocamento</small><p>QAP Central, Unidade GTM, QTI do Caixa Eletrônico, (X) metros/km.</p></div>
+          <p>Estabelecer a comunicação na central, informar a unidade que está a caminho (2 motos = Equipe e 3 motos = 1 Unidade), caso esteja sozinho informe que uma GTM está QTI.</p>
+          <div class="radio-example"><small>Modulação de Acompanhamento</small><p>QAP Central, Akuma na praça, sentido Sport Race;</p></div>
+          <p>Estabeleça o contato com a central, informe QTH atual, informe QTH futuro, caso mude o rumo corrija a informação.</p>
+        </div>
+      </section>
+
+      <section class="manual-section" id="posicionamento" data-title="5. Posicionamento">
+        <div class="section-heading">
+          <span class="section-number">05</span>
+          <div><p>PADRÕES OPERACIONAIS</p><h2>5. Posicionamento</h2></div>
+        </div>
+
+        <div class="topic-block" id="patrulhamento" data-title="5.1 Durante patrulhamento">
+          <h3>5.1 - Durante patrulhamento</h3>
+          <p>A formação de uma unidade do Grupamento Tático de Motocicletas consiste em até 3 motos. Independente se duas ou três, todas devem manter o formato “serrote” onde a primeira moto fica sempre à direita da via, a segunda deve manter um pouco atrás e para a esquerda, e caso tenha a terceira, ela se mantém atrás da segunda moto, alinhada com a primeira moto.</p>
+          <figure>
+            <img src="assets/patrulhamento.png" alt="Formação em serrote durante patrulhamento" loading="lazy">
+            <figcaption>Formação durante patrulhamento</figcaption>
+          </figure>
+          <p>Este padrão deve sempre ser mantido, visando a segurança de todas as motos em qualquer tipo de situação. Nesta formação, é possível realizar qualquer tipo de manobra sem que a outra corra risco.</p>
+        </div>
+
+        <div class="topic-block" id="abordagem" data-title="5.2 Durante abordagem">
+          <h3>5.2 - Durante abordagem</h3>
+          <p>Antes de qualquer abordagem, o P1 irá decidir a quem abordar e o P2 irá modular enquanto o P1 dá a voz e realiza os primeiros procedimentos, e o P3 fará o perímetro.</p>
+          <p>Durante a abordagem, as motos realizarão uma formação em “L”, onde a primeira moto posicionará na lateral do veículo, a segunda na diagonal e a terceira logo atrás do veículo, sempre de olho na retaguarda. Segue o exemplo na imagem abaixo:</p>
+          <figure>
+            <img src="assets/abordagem.png" alt="Formação em L durante abordagem" loading="lazy">
+            <figcaption>Formação em “L”</figcaption>
+          </figure>
+          <p>Vale ressaltar que esta formação deve ser seguida à risca, pois garantirá a segurança de todos os membros da unidade e dará liberdade para efetuar qualquer disparo se necessário, evitando qualquer fogo amigo. No caso de fuga da abordagem, todas as motos estão bem posicionadas evitando qualquer tipo de atraso no seu embarque.</p>
+        </div>
+
+        <div class="topic-block" id="alto-risco" data-title="5.2.1 Durante abordagem de alto risco">
+          <h3>5.2.1 - Durante abordagem de alto risco</h3>
+          <p>O posicionamento será no mesmo padrão em “L” (citado acima), porém as motos irão ficar rotacionando no próprio eixo e apontando arma. Sempre em movimento, nunca parado.</p>
+        </div>
+
+        <div class="topic-block" id="estacionamento" data-title="5.3 Estacionamento">
+          <h3>5.3 - Estacionamento</h3>
+          <p>Ao efetuar o estacionamento das motocicletas, todas deverão manter com as duas rodas no mesmo lugar (Ex.: Roda dianteira na rua, roda traseira também. Roda dianteira na calçada, roda traseira também) e não com uma roda na rua e a outra na calçada. Assim como mostra a imagem abaixo:</p>
+          <figure>
+            <img src="assets/estacionamento.png" alt="Padrão de estacionamento das motocicletas" loading="lazy">
+            <figcaption>Padrão de estacionamento</figcaption>
+          </figure>
+          <p>Esse padrão deve ser sempre seguido.</p>
+        </div>
+      </section>
+
+      <section class="closing-section" id="encerramento" data-title="Encerramento">
+        <img src="assets/encerramento.png" alt="Encerramento do Manual G.T.M." loading="lazy">
+        <blockquote>“Se você fugir, eu corro atrás. Se você me enfrentar, eu luto com você. Se atirar em mim, eu atiro de volta.’’</blockquote>
+        <p>Manual de Conduta do Grupamento Tático de Motocicletas<br>criado por Brito<br>desenvolvido para a Cidade Haze</p>
+      </section>
+    </article>
+
+    <footer>
+      <img src="assets/logo.png" alt="">
+      <p>G.T.M. Haze · Manual de Conduta</p>
+      <a href="#inicio">Voltar ao início ↑</a>
+    </footer>
+  </main>
+
+  <button class="back-to-top" id="backToTop" aria-label="Voltar ao topo">↑</button>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="script.js"></script>
 </body>
 </html>
