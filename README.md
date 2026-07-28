@@ -1,14 +1,18 @@
-# Manual GTM — versão atualizada
+# Manual GTM — painel de efetivo integrado
 
-Esta versão mantém o novo visual profissional e usa:
+Esta versão mantém o manual e adiciona um painel de efetivo à direita, alimentado pela aba `API` do Google Sheets por meio do Google Apps Script.
 
-- os textos do HTML enviado;
-- a identidade Cidade de Haze;
-- os créditos atualizados;
-- as imagens enviadas para abordagem, patrulhamento, estacionamento, logo e encerramento.
+## Arquivos para publicar
 
-## Publicar no GitHub Pages
+Substitua no repositório do GitHub:
 
-1. Envie `index.html`, `style.css`, `script.js` e a pasta `assets`.
-2. Confirme o commit na branch `main`.
-3. O GitHub Pages atualizará automaticamente.
+- `index.html`
+- `style.css`
+- `script.js`
+- pasta `assets`
+
+A API já está configurada no `script.js`.
+
+## Atualização
+
+O painel consulta a planilha ao abrir a página e repete a consulta a cada 5 minutos. Para testar uma alteração imediatamente, atualize a página do navegador.

@@ -97,3 +97,52 @@ document.addEventListener("keydown",e=>{
     closeMenu();
   }
 });
+
+// ===== EFETIVO G.T.M. — GOOGLE SHEETS / APPS SCRIPT =====
+const EFFECTIVE_API_URL = "https://script.google.com/macros/s/AKfycbwUwvyBujs0PUXhlq_703EiTBCGPqNkvMWOZzqizgKk43PHvpUnwxMEuI6_BI4Aj3mV/exec";
+const effectivePanel = document.getElementById("effectivePanel");
+const effectiveToggle = document.getElementById("effectiveToggle");
+const effectiveClose = document.getElementById("effectiveClose");
+const effectiveList = document.getElementById("effectiveList");
+const effectiveSearch = document.getElementById("effectiveSearch");
+const effectiveTotal = document.getElementById("effectiveTotal");
+const effectiveActive = document.getElementById("effectiveActive");
+const effectiveUpdated = document.getElementById("effectiveUpdated");
+let effectiveMembers = [];
+
+const cargoOrder = ["Comando","Sub-Comando","Subcomando","Supervisor","Piloto Oficial","Piloto Probatorio","Piloto Probatório"];
+function normalizeEffective(value){return String(value||"").trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
+function effectiveInitials(name){return String(name||"").split(/\s+/).filter(Boolean).slice(0,2).map(p=>p[0]).join("").toUpperCase()||"GT"}
+function effectiveStatusClass(status){const value=normalizeEffective(status);if(value==="ativo"||value.includes("servico"))return"status-active";if(value==="inativo"||value==="afastado")return"status-inactive";return"status-other"}
+function cargoIndex(cargo){const normalized=normalizeEffective(cargo);const index=cargoOrder.findIndex(item=>normalizeEffective(item)===normalized);return index===-1?999:index}
+function renderEffective(data){
+  const query=normalizeEffective(effectiveSearch?.value);
+  const filtered=data.filter(item=>!query||normalizeEffective(`${item.nome} ${item.id} ${item.patente} ${item.cargo} ${item.status}`).includes(query));
+  effectiveTotal.textContent=data.length;
+  effectiveActive.textContent=data.filter(item=>normalizeEffective(item.status)==="ativo").length;
+  if(!filtered.length){effectiveList.innerHTML='<div class="effective-empty">Nenhum oficial encontrado.</div>';return}
+  const groups=filtered.reduce((acc,item)=>{const cargo=item.cargo||"Sem cargo";(acc[cargo]??=[]).push(item);return acc},{});
+  const sorted=Object.keys(groups).sort((a,b)=>cargoIndex(a)-cargoIndex(b)||a.localeCompare(b,"pt-BR"));
+  effectiveList.innerHTML=sorted.map(cargo=>`<section class="effective-group"><h3 class="effective-group-title">${cargo}</h3>${groups[cargo].map(member=>`<div class="effective-member" title="ID ${member.id||'-'} · ${member.status||'Sem status'}"><div class="effective-avatar">${effectiveInitials(member.nome)}</div><div class="effective-member-info"><span class="effective-member-name">${member.nome}</span><span class="effective-member-meta">${member.patente||'Sem patente'}${member.id?` · ID ${member.id}`:''}</span></div><i class="effective-member-status ${effectiveStatusClass(member.status)}"></i></div>`).join("")}</section>`).join("");
+}
+async function loadEffective(){
+  try{
+    effectiveUpdated.textContent="Consultando planilha...";
+    const response=await fetch(`${EFFECTIVE_API_URL}?t=${Date.now()}`,{cache:"no-store"});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const payload=await response.json();
+    if(payload.sucesso===false)throw new Error(payload.mensagem||"A API retornou um erro.");
+    effectiveMembers=Array.isArray(payload)?payload:(payload.dados||[]);
+    renderEffective(effectiveMembers);
+    effectiveUpdated.textContent=payload.atualizadoEm?`Atualizado em ${payload.atualizadoEm}`:"Dados atualizados";
+  }catch(error){
+    console.error("Erro ao carregar efetivo:",error);
+    effectiveList.innerHTML='<div class="effective-error">Não foi possível carregar o efetivo. Confirme se a implantação do Apps Script permite acesso para “Qualquer pessoa”.</div>';
+    effectiveTotal.textContent="—";effectiveActive.textContent="—";effectiveUpdated.textContent="Falha na atualização";
+  }
+}
+effectiveSearch?.addEventListener("input",()=>renderEffective(effectiveMembers));
+effectiveToggle?.addEventListener("click",()=>{const open=effectivePanel.classList.toggle("open");effectiveToggle.setAttribute("aria-expanded",String(open))});
+effectiveClose?.addEventListener("click",()=>{effectivePanel.classList.remove("open");effectiveToggle?.setAttribute("aria-expanded","false")});
+loadEffective();
+setInterval(loadEffective,300000);

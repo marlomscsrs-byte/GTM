@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090b0f">
-  <meta name="description" content="Manual de Conduta do Grupamento Tático de Motocicletas — Cidade Haze.">
+  <meta name="description" content="Manual de Conduta do Grupamento Tático de Motocicletas — Cidade de Haze.">
   <title>Manual de Conduta — G.T.M.</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -63,13 +63,52 @@
     </div>
   </aside>
 
+
+  <button class="effective-toggle" id="effectiveToggle" aria-label="Abrir efetivo" aria-expanded="false">
+    <span class="effective-toggle-dot"></span> Efetivo
+  </button>
+
+  <aside class="effective-panel" id="effectivePanel" aria-label="Efetivo G.T.M.">
+    <div class="effective-panel-header">
+      <div>
+        <p>QUADRO DA UNIDADE</p>
+        <h2>Efetivo G.T.M.</h2>
+      </div>
+      <button class="effective-close" id="effectiveClose" aria-label="Fechar efetivo">×</button>
+    </div>
+
+    <div class="effective-status-line">
+      <span class="effective-live-dot"></span>
+      <span id="effectiveUpdated">Carregando planilha...</span>
+    </div>
+
+    <div class="effective-summary">
+      <div><strong id="effectiveTotal">—</strong><span>Total</span></div>
+      <div><strong id="effectiveActive">—</strong><span>Ativos</span></div>
+    </div>
+
+    <div class="effective-search">
+      <input id="effectiveSearch" type="search" placeholder="Pesquisar oficial..." autocomplete="off">
+    </div>
+
+    <div class="effective-list" id="effectiveList">
+      <div class="effective-loading">Consultando o Google Sheets...</div>
+    </div>
+
+    <div class="effective-legend">
+      <span><i class="status-active"></i> Ativo</span>
+      <span><i class="status-inactive"></i> Inativo</span>
+      <span><i class="status-other"></i> Outro status</span>
+    </div>
+  </aside>
+
   <main>
     <section class="hero" id="inicio" data-title="Início">
       <div class="hero-glow"></div>
       <img class="hero-logo" src="assets/logo.png" alt="Logo G.T.M. Haze">
       <p class="eyebrow">GRUPAMENTO TÁTICO DE MOTOCICLETAS</p>
       <h1>Manual de Conduta — G.T.M.</h1>
-      <h2>Cidade Haze</h2>
+      <h2>Cidade de Haze</h2>
       <p class="credit">Criado por Razor Brito</p>
       <a class="primary-button" href="#introducao">Acessar manual <span>→</span></a>
       <div class="scroll-hint">Role para consultar</div>

@@ -124,3 +124,51 @@ footer a{color:#bfc4cb;text-decoration:none}
   footer{flex-direction:column;text-align:center}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+
+/* ===== PAINEL DE EFETIVO — GOOGLE SHEETS ===== */
+:root{--effective-panel:330px}
+@media(min-width:1181px){
+  main{margin-right:var(--effective-panel)}
+}
+.effective-panel{
+  position:fixed;z-index:38;inset:0 0 0 auto;width:var(--effective-panel);
+  background:rgba(8,10,14,.95);backdrop-filter:blur(18px);
+  border-left:1px solid var(--line);padding:24px 18px 20px;overflow-y:auto;
+}
+.effective-panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:17px}
+.effective-panel-header p{margin:0;color:#6f7782;font-size:9px;letter-spacing:.18em}
+.effective-panel-header h2{margin:3px 0 0;font-size:19px;letter-spacing:.02em}
+.effective-close{display:none;border:0;background:transparent;color:#fff;font-size:28px;line-height:1;cursor:pointer}
+.effective-status-line{display:flex;align-items:center;gap:8px;color:#848c97;font-size:10px;padding:13px 2px}
+.effective-live-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 10px #22c55e;flex:0 0 auto}
+.effective-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px}
+.effective-summary>div{border:1px solid var(--line);background:#0e1218;border-radius:10px;padding:11px 13px}
+.effective-summary strong{display:block;font-size:22px;line-height:1.1}
+.effective-summary span{color:#747c87;font-size:9px;text-transform:uppercase;letter-spacing:.14em}
+.effective-search input{width:100%;border:1px solid var(--line-strong);border-radius:9px;background:#0e1117;color:#fff;padding:10px 12px;outline:none;margin-bottom:12px}
+.effective-search input:focus{border-color:#8f96a1;box-shadow:0 0 0 3px rgba(255,255,255,.05)}
+.effective-group{margin:16px 0 0}
+.effective-group-title{display:flex;align-items:center;gap:8px;color:#828a95;font-size:9px;text-transform:uppercase;letter-spacing:.16em;margin:0 0 6px}
+.effective-group-title::after{content:"";height:1px;background:var(--line);flex:1}
+.effective-member{display:grid;grid-template-columns:36px 1fr 9px;align-items:center;gap:10px;padding:9px 7px;border-radius:9px;transition:.2s}
+.effective-member:hover{background:#141922}
+.effective-avatar{width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:linear-gradient(145deg,#242b35,#10151c);display:grid;place-items:center;font-size:11px;font-weight:800;color:#e7e9ec}
+.effective-member-info{min-width:0}
+.effective-member-name{display:block;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.effective-member-meta{display:block;color:#79818c;font-size:9.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.effective-member-status{width:8px;height:8px;border-radius:50%}
+.status-active{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.8)}
+.status-inactive{background:#ef4444;box-shadow:0 0 8px rgba(239,68,68,.7)}
+.status-other{background:#eab308;box-shadow:0 0 8px rgba(234,179,8,.7)}
+.effective-loading,.effective-empty,.effective-error{border:1px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:#79818c;font-size:11px}
+.effective-error{color:#f0a5a5;border-color:rgba(239,68,68,.28)}
+.effective-legend{display:flex;flex-wrap:wrap;gap:10px;border-top:1px solid var(--line);margin-top:18px;padding-top:14px;color:#737b86;font-size:9px}
+.effective-legend span{display:flex;align-items:center;gap:5px}.effective-legend i{display:inline-block;width:6px;height:6px;border-radius:50%}
+.effective-toggle{display:none;position:fixed;z-index:55;right:16px;bottom:16px;border:1px solid var(--line-strong);background:#171c24;color:#fff;border-radius:999px;padding:11px 15px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
+.effective-toggle-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 9px #22c55e;margin-right:5px}
+@media(max-width:1180px){
+  .effective-panel{width:min(360px,92vw);transform:translateX(102%);transition:.25s;z-index:70;box-shadow:-30px 0 80px rgba(0,0,0,.55)}
+  .effective-panel.open{transform:translateX(0)}
+  .effective-close,.effective-toggle{display:block}
+  .back-to-top{bottom:74px}
+}
