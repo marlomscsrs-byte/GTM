@@ -172,3 +172,14 @@ footer a{color:#bfc4cb;text-decoration:none}
   .effective-close,.effective-toggle{display:block}
   .back-to-top{bottom:74px}
 }
+
+
+/* ===== ACESSO À ADMINISTRAÇÃO G.T.M. ===== */
+.admin-menu-divider{height:1px;margin:18px 8px;background:var(--line)}
+.admin-menu-link{display:flex!important;align-items:center;gap:11px;margin:0 2px;padding:11px 12px!important;border:1px solid var(--line-strong)!important;border-left:1px solid var(--line-strong)!important;border-radius:10px!important;background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.025));color:#eef1f4!important;text-decoration:none;box-shadow:0 10px 24px rgba(0,0,0,.16);transition:transform .2s ease,border-color .2s ease,background .2s ease!important}
+.admin-menu-link:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.32)!important;background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.04))!important}
+.admin-menu-link::after{content:"↗";margin-left:auto;color:#7e8793;font-size:13px}
+.admin-menu-icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border:1px solid var(--line);border-radius:9px;background:#171c24;font-size:14px}
+.admin-menu-text{display:flex;min-width:0;flex-direction:column;gap:1px}
+.admin-menu-text strong{font-size:12.5px;line-height:1.25;letter-spacing:.01em}
+.admin-menu-text small{color:#7f8792;font-size:9.5px;line-height:1.25}

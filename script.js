@@ -6,7 +6,7 @@ const backdrop = document.getElementById("backdrop");
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const toast = document.getElementById("toast");
-const navLinks = [...document.querySelectorAll("#navigation a")];
+const navLinks = [...document.querySelectorAll("#navigation a[href^='#']")];
 
 /* =========================================================
    BARRA DE PROGRESSO E BOTÃO VOLTAR AO TOPO
