@@ -110,7 +110,13 @@ const effectiveActive = document.getElementById("effectiveActive");
 const effectiveUpdated = document.getElementById("effectiveUpdated");
 let effectiveMembers = [];
 
-const cargoOrder = ["Comando","Sub-Comando","Subcomando","Supervisor","Piloto Oficial","Piloto Probatorio","Piloto Probatório"];
+const cargoOrder = [
+  "Comando",
+  "Sub-Comando",
+  "Capitão",
+  "Piloto Oficial",
+  "Piloto Probatório"
+];
 function normalizeEffective(value){return String(value||"").trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function effectiveInitials(name){return String(name||"").split(/\s+/).filter(Boolean).slice(0,2).map(p=>p[0]).join("").toUpperCase()||"GT"}
 function effectiveStatusClass(status){const value=normalizeEffective(status);if(value==="ativo"||value.includes("servico"))return"status-active";if(value==="inativo"||value==="afastado")return"status-inactive";return"status-other"}
