@@ -20,58 +20,54 @@
   <aside class="sidebar" id="sidebar">
     <a class="brand" href="#inicio">
       <img src="assets/logo.png" alt="Logo do G.T.M. Haze">
-      <strong>G.T.M. Haze</strong>
-      <small>Manual de Conduta</small>
+      <strong>G.T.M.</strong>
+      <small>Portal Operacional da G.T.M.</small>
     </a>
 
-    <div class="search-box">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
-      <input id="searchInput" type="search" placeholder="Pesquisar no manual..." autocomplete="off">
-      <kbd>Ctrl K</kbd>
-    </div>
-    <div class="search-results" id="searchResults" hidden></div>
+    <nav class="portal-navigation" id="portalNavigation" aria-label="Áreas do portal">
+      <p class="nav-label">Portal G.T.M.</p>
+      <button class="portal-nav-link active" type="button" data-view="home"><span>⌂</span> Início</button>
+      <button class="portal-nav-link" type="button" data-view="manual"><span>▤</span> Manual</button>
+      <button class="portal-nav-link" type="button" data-view="cursos"><span>◇</span> Cursos</button>
+      <button class="portal-nav-link" type="button" data-view="armamentos"><span>⌖</span> Armamentos</button>
+      <button class="portal-nav-link" type="button" data-view="veiculos"><span>◆</span> Veículos</button>
 
-    <nav id="navigation" aria-label="Navegação do manual">
-      <p class="nav-label">Manual</p>
-      <a href="#inicio">Início</a>
-      <a href="#introducao">1. Introdução</a>
-      <a href="#regras">2. Regras</a>
-      <a href="#funcoes">3. Funções</a>
-
-      <p class="nav-label">Estrutura operacional</p>
-      <a class="sub" href="#p1">Moto Primária — P1</a>
-      <a class="sub" href="#p2">Moto Secundária — P2</a>
-      <a class="sub" href="#p3">Moto Terciária — P3</a>
-
-      <p class="nav-label">Comunicação</p>
-      <a href="#modulacao">4. Modulação</a>
-      <a class="sub" href="#pr">4.1 Comunicação no /pr</a>
-      <a class="sub" href="#central">4.2 Comunicação na Central</a>
-
-      <p class="nav-label">Procedimentos</p>
-      <a href="#posicionamento">5. Posicionamento</a>
-      <a class="sub" href="#patrulhamento">5.1 Durante patrulhamento</a>
-      <a class="sub" href="#abordagem">5.2 Durante abordagem</a>
-      <a class="sub" href="#alto-risco">5.2.1 Alto risco</a>
-      <a class="sub" href="#estacionamento">5.3 Estacionamento</a>
-      <a href="#encerramento">Encerramento</a>
-
-      <div class="admin-menu-divider" aria-hidden="true"></div>
-
-      <a
-        class="admin-menu-link"
-        href="https://script.google.com/macros/s/AKfycbweCeiLeBJkNOsZd8-jN0RnEAJFeOF9DI5cMYH3LzIsM81RudLShd5EQs2ab2GcVN2r/exec?pagina=admin"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Abrir Administração G.T.M. em uma nova aba"
-      >
-        <span class="admin-menu-icon" aria-hidden="true">🔒</span>
-        <span class="admin-menu-text">
-          <strong>Administração</strong>
-          <small>Gerenciar efetivo</small>
-        </span>
-      </a>
+      <div class="portal-menu-divider" aria-hidden="true"></div>
+      <p class="nav-label">Operacional</p>
+      <button class="portal-nav-link featured" type="button" data-view="registro"><span>✚</span> Registro de Prisão</button>
+      <a class="portal-nav-link admin-portal-link" href="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=admin" target="_blank" rel="noopener noreferrer"><span>⚙</span> Administração <b>↗</b></a>
     </nav>
+
+    <section class="manual-tools" id="manualTools" hidden>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
+        <input id="searchInput" type="search" placeholder="Pesquisar no manual..." autocomplete="off">
+        <kbd>Ctrl K</kbd>
+      </div>
+      <div class="search-results" id="searchResults" hidden></div>
+
+      <nav id="navigation" aria-label="Navegação do manual">
+        <p class="nav-label">Índice do manual</p>
+        <a href="#introducao">1. Introdução</a>
+        <a href="#regras">2. Regras</a>
+        <a href="#funcoes">3. Funções</a>
+        <p class="nav-label">Estrutura operacional</p>
+        <a class="sub" href="#p1">Moto Primária — P1</a>
+        <a class="sub" href="#p2">Moto Secundária — P2</a>
+        <a class="sub" href="#p3">Moto Terciária — P3</a>
+        <p class="nav-label">Comunicação</p>
+        <a href="#modulacao">4. Modulação</a>
+        <a class="sub" href="#pr">4.1 Comunicação no /pr</a>
+        <a class="sub" href="#central">4.2 Comunicação na Central</a>
+        <p class="nav-label">Procedimentos</p>
+        <a href="#posicionamento">5. Posicionamento</a>
+        <a class="sub" href="#patrulhamento">5.1 Durante patrulhamento</a>
+        <a class="sub" href="#abordagem">5.2 Durante abordagem</a>
+        <a class="sub" href="#alto-risco">5.2.1 Alto risco</a>
+        <a class="sub" href="#estacionamento">5.3 Estacionamento</a>
+        <a href="#encerramento">Encerramento</a>
+      </nav>
+    </section>
 
     <div class="sidebar-footer">
       <span>Documento oficial</span>
@@ -118,19 +114,19 @@
     </div>
   </aside>
 
-  <main>
-    <section class="hero" id="inicio" data-title="Início">
+  <main id="mainContent">
+    <section class="hero portal-view active" data-view-panel="home" id="inicio" data-title="Início">
       <div class="hero-glow"></div>
       <img class="hero-logo" src="assets/logo.png" alt="Logo G.T.M. Haze">
       <p class="eyebrow">GRUPAMENTO TÁTICO DE MOTOCICLETAS</p>
-      <h1>Manual de Conduta — G.T.M.</h1>
-      <h2>Cidade de Haze</h2>
+      <h1>Portal Operacional da G.T.M.</h1>
+      <h2>Haze</h2>
       <p class="credit">Criado por Razor Brito</p>
-      <a class="primary-button" href="#introducao">Acessar manual <span>→</span></a>
-      <div class="scroll-hint">Role para consultar</div>
+      <button class="primary-button" id="accessManual" type="button">Acessar manual <span>→</span></button>
+      <div class="scroll-hint">Selecione uma área no menu</div>
     </section>
 
-    <article class="content-shell">
+    <article class="content-shell portal-view" data-view-panel="manual" id="manualContent">
       <section class="manual-section" id="introducao" data-title="1. Introdução">
         <div class="section-heading">
           <span class="section-number">01</span>
@@ -262,7 +258,35 @@
       </section>
     </article>
 
-    <footer>
+
+    <section class="portal-view placeholder-view" data-view-panel="cursos">
+      <div class="placeholder-card"><span class="placeholder-icon">◇</span><p>FORMAÇÃO G.T.M.</p><h2>Cursos</h2><p class="placeholder-copy">Área reservada para treinamentos, materiais de instrução e certificações da unidade.</p><div class="coming-soon">Em breve</div></div>
+    </section>
+
+    <section class="portal-view placeholder-view" data-view-panel="armamentos">
+      <div class="placeholder-card"><span class="placeholder-icon">⌖</span><p>EQUIPAMENTOS OPERACIONAIS</p><h2>Armamentos</h2><p class="placeholder-copy">Área reservada para armamentos autorizados, regras de utilização e procedimentos de segurança.</p><div class="coming-soon">Em breve</div></div>
+    </section>
+
+    <section class="portal-view placeholder-view" data-view-panel="veiculos">
+      <div class="placeholder-card"><span class="placeholder-icon">◆</span><p>FROTA DA UNIDADE</p><h2>Veículos</h2><p class="placeholder-copy">Área reservada para motocicletas e veículos utilizados pelo G.T.M., com especificações e orientações.</p><div class="coming-soon">Em breve</div></div>
+    </section>
+
+    <section class="portal-view registration-view" data-view-panel="registro">
+      <div class="registration-shell">
+        <div class="registration-heading"><p>ÁREA OPERACIONAL</p><h2>Registro de Prisão</h2><span>Informe o ID do piloto e os dados da ocorrência.</span></div>
+        <form id="prisonForm" class="registration-form">
+          <div class="form-field"><label for="pilotId">ID do piloto</label><input id="pilotId" name="pilotId" type="number" inputmode="numeric" min="1" placeholder="Ex.: 400" required></div>
+          <div class="form-field"><label for="qruDate">Data</label><input id="qruDate" name="date" type="date" required></div>
+          <div class="form-field full"><label for="qru">QRU</label><input id="qru" name="qru" type="text" placeholder="Ex.: Roubo a banco" maxlength="120" required></div>
+          <div class="form-field full"><label for="involved">Envolvidos</label><textarea id="involved" name="involved" rows="4" placeholder="Informe nomes e IDs dos envolvidos" required></textarea></div>
+          <div class="form-field full"><label for="vehicle">Veículo</label><input id="vehicle" name="vehicle" type="text" placeholder="Modelo, cor e placa" maxlength="160" required></div>
+          <div class="form-field full"><label for="photoUrl">Link da foto</label><input id="photoUrl" name="photoUrl" type="url" placeholder="https://..." required><small>O link precisa estar acessível publicamente.</small></div>
+          <div class="form-actions full"><button type="submit" class="submit-registration">Enviar registro <span>→</span></button><p id="registrationMessage" role="status"></p></div>
+        </form>
+      </div>
+    </section>
+
+    <footer id="portalFooter">
       <img src="assets/logo.png" alt="">
       <p>G.T.M. Haze · Manual de Conduta</p>
       <a href="#inicio">Voltar ao início ↑</a>

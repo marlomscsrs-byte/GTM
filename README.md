@@ -1,23 +1,15 @@
-# Manual GTM — painel de efetivo integrado
+# Portal G.T.M. Haze
 
-Esta versão mantém o manual e adiciona um painel de efetivo à direita, alimentado pela aba `API` do Google Sheets por meio do Google Apps Script.
+Portal operacional integrado ao Google Apps Script.
 
-## Arquivos para publicar
+## API configurada
 
-Substitua no repositório do GitHub:
+`https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec`
 
-- `index.html`
-- `style.css`
-- `script.js`
-- pasta `assets`
-
-A API já está configurada no `script.js`.
-
-## Atualização
-
-O painel consulta a planilha ao abrir a página e repete a consulta a cada 5 minutos. Para testar uma alteração imediatamente, atualize a página do navegador.
-
+O formulário de prisão usa JSONP para funcionar no GitHub Pages sem bloqueio de CORS.
 
 ## Administração
 
-O menu lateral possui um botão **Administração** que abre o painel administrativo do Google Apps Script em uma nova aba. O acesso continua restrito às contas autorizadas no `Code.gs`.
+`https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=admin`
+
+Após alterar o Apps Script, atualize a implantação existente para uma **Nova versão** e mantenha o acesso como **Qualquer pessoa**.

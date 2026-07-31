@@ -183,3 +183,43 @@ footer a{color:#bfc4cb;text-decoration:none}
 .admin-menu-text{display:flex;min-width:0;flex-direction:column;gap:1px}
 .admin-menu-text strong{font-size:12.5px;line-height:1.25;letter-spacing:.01em}
 .admin-menu-text small{color:#7f8792;font-size:9.5px;line-height:1.25}
+
+
+/* ===== PORTAL G.T.M. — NAVEGAÇÃO POR ÁREAS ===== */
+.portal-navigation{display:flex;flex-direction:column;gap:4px}
+.portal-nav-link{width:100%;display:flex!important;align-items:center;gap:11px;border:0;border-left:2px solid transparent;background:transparent;color:#b8bec8;padding:11px 12px;border-radius:8px;text-align:left;font:inherit;font-size:13.5px;cursor:pointer;text-decoration:none;transition:.2s}
+.portal-nav-link span{display:grid;place-items:center;width:24px;height:24px;color:#858d99;font-size:15px}
+.portal-nav-link b{margin-left:auto;color:#747c87;font-weight:400}
+.portal-nav-link:hover{background:#151a22;color:#fff}
+.portal-nav-link.active{background:linear-gradient(90deg,rgba(255,255,255,.11),transparent);border-left-color:#fff;color:#fff}
+.portal-nav-link.featured{margin-top:2px;border:1px solid var(--line);border-left:2px solid rgba(255,255,255,.5);background:rgba(255,255,255,.035)}
+.portal-menu-divider{height:1px;background:var(--line);margin:18px 8px 6px}
+.manual-tools{margin-top:20px;padding-top:5px;border-top:1px solid var(--line)}
+.manual-tools[hidden]{display:none!important}
+.portal-view{display:none}
+.portal-view.active{display:block}
+.hero.portal-view.active{display:flex}
+.primary-button{font-family:inherit;font-size:14px;cursor:pointer}
+.placeholder-view,.registration-view{min-height:100vh;padding:clamp(70px,8vw,120px) clamp(22px,5vw,70px);align-items:center;justify-content:center}
+.placeholder-view.active,.registration-view.active{display:flex}
+.placeholder-card{width:min(760px,100%);text-align:center;border:1px solid var(--line);background:linear-gradient(145deg,rgba(20,25,34,.96),rgba(13,17,23,.96));border-radius:20px;padding:clamp(38px,7vw,78px);box-shadow:var(--shadow)}
+.placeholder-icon{display:grid;place-items:center;width:70px;height:70px;margin:0 auto 22px;border:1px solid var(--line-strong);border-radius:18px;background:#11161e;font-size:30px}
+.placeholder-card>p:first-of-type,.registration-heading>p{color:#78808b;font-size:10px;letter-spacing:.22em;margin:0}
+.placeholder-card h2,.registration-heading h2{font-size:clamp(34px,5vw,54px);margin:7px 0 12px;line-height:1.1}
+.placeholder-copy{max-width:560px;margin:0 auto;color:#9da4af}
+.coming-soon{display:inline-block;margin-top:28px;padding:7px 13px;border:1px solid var(--line);border-radius:999px;color:#c8cdd4;font-size:11px;text-transform:uppercase;letter-spacing:.15em}
+.registration-shell{width:min(860px,100%);border:1px solid var(--line);background:linear-gradient(145deg,rgba(20,25,34,.98),rgba(13,17,23,.98));border-radius:20px;padding:clamp(28px,5vw,52px);box-shadow:var(--shadow)}
+.registration-heading{border-bottom:1px solid var(--line);padding-bottom:25px;margin-bottom:28px}
+.registration-heading span{color:#8d95a0;font-size:14px}
+.registration-form{display:grid;grid-template-columns:1fr 1fr;gap:19px}
+.form-field{display:flex;flex-direction:column;gap:7px}.form-field.full,.form-actions.full{grid-column:1/-1}
+.form-field label{color:#cfd3d9;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.form-field input,.form-field textarea{width:100%;border:1px solid var(--line-strong);border-radius:10px;background:#0b0f15;color:#fff;padding:13px 14px;font:inherit;font-size:14px;outline:none;resize:vertical}
+.form-field input:focus,.form-field textarea:focus{border-color:#8f96a1;box-shadow:0 0 0 3px rgba(255,255,255,.055)}
+.form-field small{color:#747c87;font-size:10px}
+.form-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:5px}
+.submit-registration{border:1px solid #d5d8dd;background:#e2e5e9;color:#090b0f;padding:13px 20px;border-radius:9px;font:inherit;font-weight:800;cursor:pointer}.submit-registration:hover{background:#fff}
+#registrationMessage{margin:0;color:#9da4af;font-size:12px}.registration-success{color:#74e5a1!important}.registration-error{color:#ff9d9d!important}
+body:not(.manual-open) .reading-progress{display:none}
+body:not(.manual-open) #portalFooter{display:none}
+@media(max-width:600px){.registration-form{grid-template-columns:1fr}.form-field,.form-field.full,.form-actions.full{grid-column:1}.registration-view,.placeholder-view{padding:75px 12px 35px}}

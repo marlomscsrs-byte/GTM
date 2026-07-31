@@ -1,3 +1,138 @@
+
+/* =========================================================
+   PORTAL G.T.M. — ABAS E FORMULÁRIO DE REGISTRO
+========================================================= */
+const portalButtons = [...document.querySelectorAll("[data-view]")];
+const portalViews = [...document.querySelectorAll("[data-view-panel]")];
+const manualTools = document.getElementById("manualTools");
+const accessManual = document.getElementById("accessManual");
+const prisonForm = document.getElementById("prisonForm");
+const registrationMessage = document.getElementById("registrationMessage");
+
+// Cole aqui a URL do Web App responsável por salvar a prisão e enviar ao Discord.
+// Enquanto estiver vazia, o formulário valida os campos e mantém o registro em modo de demonstração.
+const REGISTRATION_API_URL =
+  "https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec";
+
+function openPortalView(viewName, scroll = true) {
+  portalViews.forEach(view => view.classList.toggle("active", view.dataset.viewPanel === viewName));
+  portalButtons.forEach(button => button.classList.toggle("active", button.dataset.view === viewName));
+  const isManual = viewName === "manual";
+  if (manualTools) manualTools.hidden = !isManual;
+  document.body.classList.toggle("manual-open", isManual);
+  if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
+  closeMenu();
+}
+
+portalButtons.forEach(button => {
+  if (button.tagName === "BUTTON") button.addEventListener("click", () => openPortalView(button.dataset.view));
+});
+accessManual?.addEventListener("click", () => openPortalView("manual"));
+
+function enviarRegistroPorJsonp(dados) {
+  return new Promise((resolve, reject) => {
+    const callbackName =
+      "gtmRegistro_" + Date.now() + "_" +
+      Math.random().toString(36).slice(2);
+
+    const script = document.createElement("script");
+    const timeout = window.setTimeout(() => {
+      limpar();
+      reject(new Error(
+        "A API não respondeu. Confirme se a implantação foi atualizada e está liberada para qualquer pessoa."
+      ));
+    }, 30000);
+
+    function limpar() {
+      window.clearTimeout(timeout);
+      script.remove();
+      try {
+        delete window[callbackName];
+      } catch (_) {
+        window[callbackName] = undefined;
+      }
+    }
+
+    window[callbackName] = resultado => {
+      limpar();
+      resolve(resultado || {});
+    };
+
+    script.onerror = () => {
+      limpar();
+      reject(new Error(
+        "Não foi possível conectar ao Google Apps Script. Verifique a implantação do Web App."
+      ));
+    };
+
+    const parametros = new URLSearchParams({
+      acao: "registrarPrisao",
+      callback: callbackName,
+      pilotId: dados.pilotId || "",
+      date: dados.date || "",
+      qru: dados.qru || "",
+      involved: dados.involved || "",
+      vehicle: dados.vehicle || "",
+      photoUrl: dados.photoUrl || "",
+      _: String(Date.now())
+    });
+
+    script.src = `${REGISTRATION_API_URL}?${parametros.toString()}`;
+    script.async = true;
+    document.head.appendChild(script);
+  });
+}
+
+prisonForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+  registrationMessage.className = "";
+  registrationMessage.textContent = "Enviando registro...";
+
+  const formData = Object.fromEntries(
+    new FormData(prisonForm).entries()
+  );
+
+  if (!/^https:\/\//i.test(formData.photoUrl || "")) {
+    registrationMessage.textContent =
+      "Informe um link de foto iniciado por https://";
+    registrationMessage.className = "registration-error";
+    return;
+  }
+
+  if (!REGISTRATION_API_URL) {
+    registrationMessage.textContent =
+      "A URL da API de registros ainda não foi configurada.";
+    registrationMessage.className = "registration-error";
+    return;
+  }
+
+  const submitButton = prisonForm.querySelector("button[type='submit']");
+  if (submitButton) submitButton.disabled = true;
+
+  try {
+    const result = await enviarRegistroPorJsonp(formData);
+
+    if (result.success === false || result.sucesso === false) {
+      throw new Error(
+        result.message || result.mensagem ||
+        "Não foi possível enviar o registro."
+      );
+    }
+
+    registrationMessage.textContent =
+      result.message || result.mensagem ||
+      "Registro enviado com sucesso.";
+    registrationMessage.className = "registration-success";
+    prisonForm.reset();
+  } catch (error) {
+    registrationMessage.textContent =
+      error.message || "Erro ao enviar o registro.";
+    registrationMessage.className = "registration-error";
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
+});
+
 const progress = document.getElementById("readingProgress");
 const backToTop = document.getElementById("backToTop");
 const sidebar = document.getElementById("sidebar");
@@ -323,7 +458,7 @@ document.addEventListener(
 ========================================================= */
 
 const EFFECTIVE_API_URL =
-  "https://script.google.com/macros/s/AKfycbwUwvyBujs0PUXhlq_703EiTBCGPqNkvMWOZzqizgKk43PHvpUnwxMEuI6_BI4Aj3mV/exec";
+  "https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec";
 
 const effectivePanel =
   document.getElementById("effectivePanel");
