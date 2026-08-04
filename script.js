@@ -931,3 +931,107 @@ window.setInterval(
   loadEffective,
   300000
 );
+
+
+/* ===== CATÁLOGO PÚBLICO ===== */
+const GTM_CATALOG_API_URL = "https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec";
+
+function carregarCatalogoPublicoJsonp() {
+  return new Promise((resolve, reject) => {
+    const callback = "gtmCatalogo_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+    const script = document.createElement("script");
+    const timeout = setTimeout(() => {
+      limpar();
+      reject(new Error("A API do catálogo não respondeu."));
+    }, 30000);
+
+    function limpar() {
+      clearTimeout(timeout);
+      script.remove();
+      try { delete window[callback]; } catch (_) { window[callback] = undefined; }
+    }
+
+    window[callback] = resultado => {
+      limpar();
+      if (resultado?.sucesso === false) {
+        reject(new Error(resultado.mensagem || "Erro ao carregar catálogo."));
+        return;
+      }
+      resolve(resultado || {});
+    };
+
+    script.onerror = () => {
+      limpar();
+      reject(new Error("Não foi possível carregar o catálogo."));
+    };
+
+    script.src = `${GTM_CATALOG_API_URL}?acao=listarCatalogo&callback=${encodeURIComponent(callback)}&_=${Date.now()}`;
+    document.head.appendChild(script);
+  });
+}
+
+function escaparCatalogo(valor) {
+  return String(valor ?? "")
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+
+function tipoCatalogo(valor) {
+  const texto = String(valor || "").toLocaleLowerCase("pt-BR");
+  if (texto.includes("uniform")) return "Uniforme";
+  if (texto.includes("arm")) return "Armamento";
+  return "Veículo";
+}
+
+function criarCartaoCatalogo(item) {
+  return `<article class="catalog-card">
+    <div class="catalog-image-wrap">
+      <img src="${escaparCatalogo(item.imagem)}" alt="${escaparCatalogo(item.titulo)}" loading="lazy"
+        onerror="this.style.display='none';this.parentElement.classList.add('image-error')">
+      <div class="catalog-image-fallback"><strong>Imagem não encontrada</strong><small>Verifique o link cadastrado.</small></div>
+      <span class="catalog-badge">${escaparCatalogo(item.etiqueta || tipoCatalogo(item.tipo))}</span>
+    </div>
+    <div class="catalog-card-body">
+      <p class="catalog-rank">${escaparCatalogo(item.patente || "Uso geral")}</p>
+      <h3>${escaparCatalogo(item.titulo)}</h3>
+      ${item.descricao ? `<p class="catalog-description">${escaparCatalogo(item.descricao)}</p>` : ""}
+    </div>
+  </article>`;
+}
+
+async function carregarCatalogoPublico() {
+  try {
+    const resultado = await carregarCatalogoPublicoJsonp();
+    const itens = Array.isArray(resultado.dados) ? resultado.dados : [];
+
+    [
+      ["Veículo","vehicleCatalog","vehicleCount","vehicleStatus"],
+      ["Uniforme","uniformCatalog","uniformCount","uniformStatus"],
+      ["Armamento","weaponCatalog","weaponCount","weaponStatus"]
+    ].forEach(([tipo, containerId, countId, statusId]) => {
+      const filtrados = itens.filter(item => tipoCatalogo(item.tipo) === tipo);
+      const container = document.getElementById(containerId);
+      const count = document.getElementById(countId);
+      const status = document.getElementById(statusId);
+
+      if (count) count.textContent = filtrados.length;
+      if (status) status.hidden = true;
+      if (container) {
+        container.innerHTML = filtrados.length
+          ? filtrados.map(criarCartaoCatalogo).join("")
+          : `<div class="catalog-empty"><strong>Nenhum item cadastrado.</strong></div>`;
+      }
+    });
+  } catch (erro) {
+    ["vehicleStatus","uniformStatus","weaponStatus"].forEach(id => {
+      const elemento = document.getElementById(id);
+      if (elemento) {
+        elemento.textContent = erro.message;
+        elemento.className = "catalog-status catalog-status-error";
+      }
+    });
+  }
+}
+
+carregarCatalogoPublico();
+

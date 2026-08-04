@@ -31,11 +31,12 @@
       <button class="portal-nav-link" type="button" data-view="cursos"><span>◇</span> Cursos</button>
       <button class="portal-nav-link" type="button" data-view="armamentos"><span>⌖</span> Armamentos</button>
       <button class="portal-nav-link" type="button" data-view="veiculos"><span>◆</span> Veículos</button>
+       <button class="portal-nav-link" type="button" data-view="uniformes"><span>▣</span> Uniformes</button>
 
       <div class="portal-menu-divider" aria-hidden="true"></div>
       <p class="nav-label">Operacional</p>
       <button class="portal-nav-link featured" type="button" data-view="registro"><span>✚</span> Registro de Prisão</button>
-      <a class="portal-nav-link admin-portal-link" href="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=admin" target="_blank" rel="noopener noreferrer"><span>⚙</span> Administração <b>↗</b></a>
+      <a class="portal-nav-link admin-portal-link" href="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=admin"><span>⚙</span> Administração <b>→</b></a>
     </nav>
 
     <section class="manual-tools" id="manualTools" hidden>
@@ -262,14 +263,28 @@
     <section class="portal-view placeholder-view" data-view-panel="cursos">
       <div class="placeholder-card"><span class="placeholder-icon">◇</span><p>FORMAÇÃO G.T.M.</p><h2>Cursos</h2><p class="placeholder-copy">Área reservada para treinamentos, materiais de instrução e certificações da unidade.</p><div class="coming-soon">Em breve</div></div>
     </section>
-
-    <section class="portal-view placeholder-view" data-view-panel="armamentos">
-      <div class="placeholder-card"><span class="placeholder-icon">⌖</span><p>EQUIPAMENTOS OPERACIONAIS</p><h2>Armamentos</h2><p class="placeholder-copy">Área reservada para armamentos autorizados, regras de utilização e procedimentos de segurança.</p><div class="coming-soon">Em breve</div></div>
+    <section class="portal-view catalog-view" data-view-panel="armamentos">
+      <div class="catalog-shell">
+        <header class="catalog-heading"><div><p>EQUIPAMENTOS AUTORIZADOS</p><h2>Armamentos</h2><span>Armamentos autorizados conforme patente ou função operacional.</span></div><div class="catalog-counter"><strong id="weaponCount">0</strong><small>cadastrados</small></div></header>
+        <div class="catalog-status" id="weaponStatus">Carregando armamentos...</div>
+        <div class="catalog-grid" id="weaponCatalog"></div>
+      </div>
+    </section>
+    <section class="portal-view catalog-view" data-view-panel="veiculos">
+      <div class="catalog-shell">
+        <header class="catalog-heading"><div><p>FROTA DA UNIDADE</p><h2>Veículos</h2><span>Motocicletas e veículos autorizados para utilização pelo G.T.M.</span></div><div class="catalog-counter"><strong id="vehicleCount">0</strong><small>cadastrados</small></div></header>
+        <div class="catalog-status" id="vehicleStatus">Carregando veículos...</div>
+        <div class="catalog-grid" id="vehicleCatalog"></div>
+      </div>
+    </section>
+    <section class="portal-view catalog-view" data-view-panel="uniformes">
+      <div class="catalog-shell">
+        <header class="catalog-heading"><div><p>PADRÃO VISUAL DA UNIDADE</p><h2>Uniformes</h2><span>Uniformes autorizados conforme patente, função ou situação operacional.</span></div><div class="catalog-counter"><strong id="uniformCount">0</strong><small>cadastrados</small></div></header>
+        <div class="catalog-status" id="uniformStatus">Carregando uniformes...</div>
+        <div class="catalog-grid" id="uniformCatalog"></div>
+      </div>
     </section>
 
-    <section class="portal-view placeholder-view" data-view-panel="veiculos">
-      <div class="placeholder-card"><span class="placeholder-icon">◆</span><p>FROTA DA UNIDADE</p><h2>Veículos</h2><p class="placeholder-copy">Área reservada para motocicletas e veículos utilizados pelo G.T.M., com especificações e orientações.</p><div class="coming-soon">Em breve</div></div>
-    </section>
 
     <section class="portal-view registration-view" data-view-panel="registro">
       <div class="registration-shell">
