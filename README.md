@@ -1,15 +1,9 @@
-# Portal G.T.M. Villa
+# CIP — V67 Recuperação Estável
 
-Portal operacional integrado ao Google Apps Script.
+Baseada diretamente na V65 funcional.
 
-## API configurada
+Objetivo desta versão: recuperar o sistema completo sem alterar a lógica do backend.
 
-`https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec`
+Mantidos: login, sessão/JWT, PostgreSQL, permissões, aprovações, marcações, resultados, notificações, perfil, webhooks e agenda.
 
-O formulário de prisão usa JSONP para funcionar no GitHub Pages sem bloqueio de CORS.
-
-## Administração
-
-`https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=admin`
-
-Após alterar o Apps Script, atualize a implantação existente para uma **Nova versão** e mantenha o acesso como **Qualquer pessoa**.
+Arquivos públicos mantidos somente os usados pela aplicação: `index.html`, `CIP.png` e `hero-cip.png`.
