@@ -395,7 +395,7 @@ async function pessoalPage(){
 
         <div class="personal-two-columns bottom-personal">
           <section class="personal-panel info-panel">
-            <div class="personal-panel-head"><div><span class="eyebrow">DADOS DO OFICIAL</span><h2>Informações pessoais</h2></div><button class="btn secondary" onclick="alert('A edição de dados será disponibilizada pelo Comando.')">Editar informações</button></div>
+            <div class="personal-panel-head"><div><span class="eyebrow">DADOS DO OFICIAL</span><h2>Informações pessoais</h2></div><button class="btn secondary" onclick="openPersonalEdit()">Editar informações</button></div>
             <div class="personal-info-grid">
               ${personalInfo('NOME',u.nome||'—')}
               ${personalInfo('PASSAPORTE',u.matricula||'—')}
@@ -419,6 +419,55 @@ function attendanceKpi(value,label){return `<div class="attendance-kpi"><b>${val
 function personalInfo(label,value){return `<div class="personal-info-box"><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></div>`}
 function changePersonalAvatar(input){const f=input.files?.[0];if(!f)return;if(f.size>3*1024*1024){alert('A imagem deve ter no máximo 3 MB.');input.value='';return;}const r=new FileReader();r.onload=()=>{localStorage.setItem('gtm_avatar',r.result);const el=document.getElementById('personal-avatar');if(el)el.innerHTML=`<img src="${r.result}" alt="Foto do perfil">`;};r.readAsDataURL(f)}
 function removePersonalAvatar(){localStorage.removeItem('gtm_avatar');const el=document.getElementById('personal-avatar');if(el){const n=(currentUser?.nome||'GTM').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase();el.innerHTML=`<span>${escapeHtml(n)}</span>`;}}
+
+
+function openPersonalEdit(){
+  const u=currentUser||{};
+  const old=document.getElementById('personal-edit-modal');
+  if(old) old.remove();
+  document.body.insertAdjacentHTML('beforeend',`
+    <div class="modal personal-edit-modal" id="personal-edit-modal">
+      <div class="modal-card personal-edit-card">
+        <button class="modal-close" type="button" onclick="closePersonalEdit()">×</button>
+        <span class="eyebrow">MEU PERFIL</span>
+        <h2>Editar informações</h2>
+        <p class="personal-edit-note">Atualize seus dados pessoais. Passaporte e patente são controlados pelo Comando.</p>
+        <form onsubmit="savePersonalEdit(event)">
+          <label>Nome<input id="edit-personal-nome" maxlength="120" value="${escapeAttr(u.nome||'')}" required></label>
+          <label>Telefone<input id="edit-personal-telefone" maxlength="30" value="${escapeAttr(u.telefone_cidade||'')}" placeholder="Ex.: 278-406"></label>
+          <label>E-mail<input id="edit-personal-email" type="email" maxlength="160" value="${escapeAttr(u.email||'')}" placeholder="Ex.: seuemail@email.com"></label>
+          <div class="personal-edit-readonly">
+            <div><small>PASSAPORTE</small><b>${escapeHtml(u.matricula||'—')}</b></div>
+            <div><small>PATENTE</small><b>${escapeHtml(u.patente||'—')}</b></div>
+          </div>
+          <div class="personal-edit-error" id="personal-edit-error"></div>
+          <div class="personal-edit-actions">
+            <button class="btn secondary" type="button" onclick="closePersonalEdit()">Cancelar</button>
+            <button class="btn" type="submit">Salvar alterações</button>
+          </div>
+        </form>
+      </div>
+    </div>`);
+}
+function closePersonalEdit(){document.getElementById('personal-edit-modal')?.remove();}
+async function savePersonalEdit(event){
+  event.preventDefault();
+  const error=document.getElementById('personal-edit-error');
+  error.textContent='';
+  const body={
+    nome:document.getElementById('edit-personal-nome').value.trim(),
+    telefone_cidade:document.getElementById('edit-personal-telefone').value.trim(),
+    email:document.getElementById('edit-personal-email').value.trim()
+  };
+  try{
+    const data=await api('/api/pessoal',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    currentUser={...currentUser,...data.user};
+    localStorage.setItem('gtm_user',JSON.stringify(currentUser));
+    closePersonalEdit();
+    await pessoalPage();
+    alert('Informações atualizadas com sucesso.');
+  }catch(e){error.textContent=e.message;}
+}
 
 async function efetivoPage(){
   try{

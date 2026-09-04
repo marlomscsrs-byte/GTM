@@ -581,6 +581,63 @@ app.get("/api/pessoal", auth, async (req, res) => {
   } catch(error) { console.error(error); res.status(500).json({error:"Não foi possível carregar seus dados pessoais."}); }
 });
 
+
+app.put("/api/pessoal", auth, async (req, res) => {
+  const nome = String(req.body.nome || "").trim();
+  const telefone_cidade = String(req.body.telefone_cidade || "").trim();
+  const email = String(req.body.email || "").trim();
+
+  if (!nome) return res.status(400).json({ error: "Informe seu nome." });
+  if (nome.length > 120) return res.status(400).json({ error: "O nome é muito longo." });
+  if (telefone_cidade.length > 30) return res.status(400).json({ error: "O telefone é muito longo." });
+  if (email.length > 160) return res.status(400).json({ error: "O e-mail é muito longo." });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const before = await client.query(
+      `SELECT id,nome,telefone_cidade,email,matricula,patente FROM usuarios WHERE id=$1 FOR UPDATE`,
+      [req.user.id]
+    );
+    if (!before.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    const result = await client.query(
+      `UPDATE usuarios
+          SET nome=$1, telefone_cidade=$2, email=NULLIF($3,'')
+        WHERE id=$4
+      RETURNING id,username,nome,matricula,patente,telefone_cidade,email,role`,
+      [nome, telefone_cidade, email, req.user.id]
+    );
+
+    // Mantém o registro do efetivo sincronizado com os dados editáveis do próprio usuário.
+    await client.query(
+      `UPDATE efetivo
+          SET nome=$1, telefone_cidade=$2
+        WHERE usuario_id=$3`,
+      [nome, telefone_cidade, req.user.id]
+    );
+
+    await client.query(
+      `INSERT INTO logs (usuario_id,acao,entidade,entidade_id,detalhes)
+       VALUES ($1,'EDITAR_DADOS_PESSOAIS','usuarios',$1,$2)`,
+      [req.user.id, JSON.stringify({
+        antes: before.rows[0],
+        depois: { nome, telefone_cidade, email: email || null }
+      })]
+    );
+
+    await client.query("COMMIT");
+    res.json({ ok:true, user:result.rows[0], message:"Informações atualizadas com sucesso." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error(error);
+    res.status(500).json({ error:"Não foi possível atualizar suas informações." });
+  } finally { client.release(); }
+});
+
 app.get("/api/ocorrencias", auth, async (_, res) => {
   const { rows } = await pool.query(
     `SELECT id, protocolo, tipo, titulo, local, status, created_at
