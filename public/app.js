@@ -127,27 +127,70 @@ async function loadPage(name){
 async function dashboard(){
   try{
     const d=await api("/api/dashboard");
-    page.innerHTML=`<div class="hero"><span class="over">BEM-VINDO AO PORTAL GTM</span><h1>Boa noite, ${escapeHtml(currentUser?.nome||"Operador")}!</h1><p>“Controle hoje, resultados amanhã.”</p></div>
-    <div class="stats">
-      ${stat(d.stats.efetivo,"EFETIVO ATIVO","Integrantes")} ${stat(d.stats.ocorrencias,"OCORRÊNCIAS","Últimos 7 dias")} ${stat(d.stats.servicos,"SERVIÇOS HOJE","Programados")} ${stat(d.stats.cursos,"CURSOS","Ativos")} ${stat(d.stats.motocicletas,"MOTOCICLETAS","Frota ativa")} ${stat(d.stats.online,"USUÁRIOS ONLINE","Agora")}
-    </div>
-    <div class="section"><h3>ATIVIDADES RÁPIDAS</h3><div class="actions">
-      ${action("▣","Nova ocorrência","Registrar no sistema","ocorrencias")}
-      ${action("◆","Nova ação","Adicionar atividade","escala")}
-      ${action("◷","Escala semanal","Visualizar / editar","escala")}
-      ${action("♙","Efetivo","Gerenciar integrantes","efetivo")}
-      ${action("◇","Cursos","Cadastrar / acompanhar","cursos")}
-      ${action("♢","Frota","Controle de motocicletas","frota")}
-      ${action("▤","Relatórios","Estatísticas e dados","relatorios")}
-      ${action("⚙","Administração","Contas e usuários","admin")}
-    </div></div>
-    <div class="two"><div class="section"><h3>STATUS OPERACIONAL</h3><div class="rows">
-      <div class="row"><span>Efetivo ativo</span><b>${d.stats.efetivo}</b></div>
-      <div class="row"><span>Serviços hoje</span><b>${d.stats.servicos}</b></div>
-      <div class="row"><span>Motocicletas disponíveis</span><b>${d.stats.motocicletas}</b></div>
-    </div></div><div class="section"><h3>ACESSO</h3><div class="rows"><div class="row"><span>Usuário</span><small>${escapeHtml(currentUser?.username||"-")}</small></div><div class="row"><span>Perfil</span><small>${escapeHtml(currentUser?.patente||"Piloto")}</small></div><div class="row"><span>Permissão</span><small>${currentUser?.role === 'admin' ? 'COMANDO' : 'OPERADOR'}</small></div><div class="row"><span>Sessão</span><span class="pill">ATIVA</span></div></div></div></div>`;
+    const s=d.stats||{};
+    const nome=escapeHtml(currentUser?.nome||"Operador");
+    const patente=escapeHtml(currentUser?.patente||"Integrante GTM");
+    const role=currentUser?.role === 'admin' ? 'Comando' : 'Operador';
+    page.innerHTML=`
+      <div class="dashboard-hero">
+        <div class="hero-copy">
+          <span class="over">CENTRAL OPERACIONAL</span>
+          <h1>Bom dia, ${nome}!</h1>
+          <p>“Toda missão bem executada começa com uma boa preparação.”</p>
+          <small>${patente} • painel pessoal</small>
+        </div>
+        <div class="hero-metrics">
+          ${heroMetric(s.ocorrencias||0,'OCORRÊNCIAS','7 dias')}
+          ${heroMetric(s.servicos||0,'SERVIÇOS','Hoje')}
+          ${heroMetric(s.efetivo||0,'EFETIVO','Ativos')}
+          ${heroMetric(s.motocicletas||0,'MOTOS','Disponíveis')}
+        </div>
+        <button class="service-button" onclick="loadPage('escala')">↪ Iniciar serviço</button>
+      </div>
+
+      <div class="dashboard-grid">
+        <section class="quick-panel">
+          <div class="panel-heading"><div><span class="eyebrow">ATALHOS</span><h2>Ações principais</h2></div></div>
+          <div class="quick-grid">
+            ${dashboardAction('▤','Nova QRU','Registrar ocorrência','ocorrencias')}
+            ${dashboardAction('⚔','Nova ação','Adicionar atividade','acoes')}
+            ${dashboardAction('♜','Ranking','Ver classificação','relatorios')}
+            ${dashboardAction('▥','Setor pessoal','Solicitações','pessoal')}
+            ${dashboardAction('⚑','Avisos','Comunicados da unidade','comunicados')}
+            ${dashboardAction('♙','Hierarquia','Estrutura da unidade','efetivo')}
+          </div>
+        </section>
+
+        <aside class="side-panel">
+          <div class="panel-heading"><div><span class="eyebrow">DESTAQUE</span><h2>Resumo operacional</h2></div></div>
+          ${rankRow('01','Efetivo ativo',s.efetivo||0,'integrantes')}
+          ${rankRow('02','Ocorrências',s.ocorrencias||0,'últimos 7 dias')}
+          ${rankRow('03','Serviços hoje',s.servicos||0,'programados')}
+          ${rankRow('04','Cursos ativos',s.cursos||0,'treinamentos')}
+          ${rankRow('05','Usuários online',s.online||0,'agora')}
+        </aside>
+
+        <section class="status-panel">
+          <div class="panel-heading"><div><span class="eyebrow">STATUS OPERACIONAL</span><h2>Equipe em serviço</h2></div><span class="live-dot">● ONLINE</span></div>
+          <div class="service-empty"><div class="service-icon">◉</div><div><b>${s.servicos||0} serviço(s) programado(s) hoje</b><small>Consulte a escala para visualizar a equipe e iniciar seu serviço.</small></div><button class="outline-btn" onclick="loadPage('escala')">Ver escala</button></div>
+        </section>
+
+        <section class="profile-panel">
+          <div class="panel-heading"><div><span class="eyebrow">MEU PERFIL</span><h2>Acesso atual</h2></div></div>
+          <div class="profile-summary"><div class="profile-badge">${escapeHtml((currentUser?.nome||'O').charAt(0).toUpperCase())}</div><div><b>${nome}</b><small>${patente}</small></div></div>
+          <div class="profile-rows">
+            <div><span>Usuário</span><b>${escapeHtml(currentUser?.username||'-')}</b></div>
+            <div><span>Perfil</span><b>${role}</b></div>
+            <div><span>Sessão</span><b class="online-text">● Ativa</b></div>
+          </div>
+        </section>
+      </div>`;
   }catch(e){ page.innerHTML=`<div class="section"><h3>Banco de dados indisponível</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`}
 }
+
+function heroMetric(n,label,sub){return `<div class="hero-metric"><label>${label}</label><b>${n}</b><small>${sub}</small></div>`}
+function dashboardAction(icon,title,sub,target){return `<button class="dashboard-action" onclick="loadPage('${target}')"><div class="dash-icon">${icon}</div><strong>${title}</strong><small>${sub}</small></button>`}
+function rankRow(pos,title,value,sub){return `<div class="rank-row"><span class="rank-pos">${pos}</span><div><b>${title}</b><small>${sub}</small></div><strong>${value}</strong></div>`}
 
 function stat(n,label,sub){return `<div class="stat"><label>${label}</label><b>${n}</b><small>● ${sub}</small></div>`}
 function action(icon,title,sub,target){return `<button class="action" onclick="loadPage('${target}')"><div class="ico">${icon}</div><strong>${title}</strong><small>${sub}</small></button>`}
