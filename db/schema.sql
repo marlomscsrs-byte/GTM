@@ -6,12 +6,24 @@ CREATE TABLE IF NOT EXISTS usuarios (
   password_hash TEXT NOT NULL,
   nome VARCHAR(120) NOT NULL,
   patente VARCHAR(80),
+  matricula VARCHAR(30),
   email VARCHAR(160),
+  telefone_cidade VARCHAR(30),
+  role VARCHAR(30) NOT NULL DEFAULT 'operador',
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
   aprovado BOOLEAN NOT NULL DEFAULT FALSE,
+  status_cadastro VARCHAR(20) NOT NULL DEFAULT 'pendente',
   ultimo_acesso TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS role VARCHAR(30) NOT NULL DEFAULT 'operador';
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefone_cidade VARCHAR(30);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS matricula VARCHAR(30);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS status_cadastro VARCHAR(20) NOT NULL DEFAULT 'pendente';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_matricula ON usuarios(matricula) WHERE matricula IS NOT NULL;
+-- Migração segura de contas antigas já aprovadas.
+UPDATE usuarios SET status_cadastro='aprovado' WHERE aprovado=true AND ativo=true AND status_cadastro='pendente';
 
 CREATE TABLE IF NOT EXISTS efetivo (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -19,13 +31,19 @@ CREATE TABLE IF NOT EXISTS efetivo (
   nome VARCHAR(120) NOT NULL,
   matricula VARCHAR(30) UNIQUE,
   patente VARCHAR(80),
-  status VARCHAR(40) DEFAULT 'Disponível',
+  status VARCHAR(40) DEFAULT 'Ativo',
   unidade VARCHAR(80),
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
   data_ingresso DATE,
   observacoes TEXT,
+  telefone_cidade VARCHAR(30),
+  cadastro_key VARCHAR(80) UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE efetivo ADD COLUMN IF NOT EXISTS cadastro_key VARCHAR(80);
+ALTER TABLE efetivo ADD COLUMN IF NOT EXISTS telefone_cidade VARCHAR(30);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_efetivo_cadastro_key ON efetivo(cadastro_key) WHERE cadastro_key IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS ocorrencias (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -47,6 +65,7 @@ CREATE TABLE IF NOT EXISTS servicos (
   responsavel UUID REFERENCES efetivo(id) ON DELETE SET NULL,
   status VARCHAR(40) DEFAULT 'Programado',
   observacoes TEXT,
+  telefone_cidade VARCHAR(30),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -114,3 +133,6 @@ CREATE TABLE IF NOT EXISTS logs (
 CREATE INDEX IF NOT EXISTS idx_ocorrencias_created ON ocorrencias(created_at);
 CREATE INDEX IF NOT EXISTS idx_servicos_data ON servicos(data);
 CREATE INDEX IF NOT EXISTS idx_logs_created ON logs(created_at);
+
+-- O efetivo começa vazio. Um autocadastro fica pendente e só entra no efetivo
+-- depois da aprovação do Comando. A aprovação cria e vincula o registro automaticamente.

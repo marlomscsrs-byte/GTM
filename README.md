@@ -1,4 +1,4 @@
-# Portal GTM
+# Portal G.T.M.
 
 Portal operacional do Grupamento Tático de Motocicletas.
 
@@ -6,36 +6,20 @@ Portal operacional do Grupamento Tático de Motocicletas.
 
 - Node.js + Express
 - PostgreSQL
-- Frontend HTML/CSS/JS
-- JWT para sessão
-- bcrypt para senhas
-- Render Blueprint (`render.yaml`)
+- JWT + bcrypt
+- Frontend HTML/CSS/JavaScript servido pelo próprio Node
+- Deploy pelo Render via `render.yaml`
 
-## Sem Google Sheets
+## Efetivo e contas
 
-Todos os dados foram planejados para PostgreSQL:
-usuários, efetivo, ocorrências, serviços, cursos, certificações,
-motocicletas, manutenções, comunicados e logs.
+O cadastro inicial do efetivo é carregado automaticamente no PostgreSQL a partir de `db/schema.sql`. Cada integrante possui um registro próprio e, posteriormente, o comando pode criar uma conta individual pela aba **Efetivo**. A conta criada fica vinculada ao integrante através de `usuario_id`.
 
-## Deploy no Render
+Isso permite manter o quadro oficial mesmo antes de todos os integrantes possuírem acesso ao portal.
 
-1. Suba este projeto para um repositório Git.
-2. No Render, crie um novo Blueprint.
-3. Aponte para o repositório.
-4. O `render.yaml` cria o serviço web e o PostgreSQL.
-5. Execute `db/schema.sql` no banco para criar as tabelas.
+## Primeiro acesso
 
-## Próxima etapa
+Quando o banco ainda não possui usuários, o portal abre a configuração inicial para criação do primeiro administrador. Depois disso, somente usuários autorizados conseguem entrar.
 
-Adicionar endpoints CRUD e permissões por perfil para cada módulo.
+## Render
 
-
-## Configuração inicial
-
-Na primeira inicialização, o servidor cria automaticamente todas as tabelas do PostgreSQL. Se ainda não existir nenhum usuário, o portal exibirá a tela de **Configuração Inicial** para criar o primeiro administrador.
-
-Depois de criar o administrador, o cadastro inicial é bloqueado automaticamente. A autenticação usa JWT e as senhas são armazenadas com hash bcrypt.
-
-### Render
-
-O `render.yaml` cria o serviço Node.js e o PostgreSQL. O banco gratuito do Render é indicado apenas para testes, pois possui limitações de duração. Para produção, utilize um plano PostgreSQL adequado.
+O `render.yaml` cria o serviço web `portal-gtm` e o PostgreSQL `gtm-db` no mesmo Blueprint.

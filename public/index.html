@@ -14,13 +14,15 @@
     <span class="overline">CENTRAL OPERACIONAL</span>
     <h1>Portal <i>GTM</i></h1>
     <p>Gestão operacional integrada</p>
+    <div class="approval-info"><span>●</span><div><b>Acesso controlado</b><small>Novos cadastros passam por aprovação do Comando.</small></div></div>
     <form id="form">
       <label>Usuário<input id="username" placeholder="Digite seu usuário" required></label>
       <label>Senha<input id="password" type="password" placeholder="Digite sua senha" required></label>
       <button>Entrar <span>→</span></button>
+      <button type="button" class="secondary-login" id="open-register">Criar minha conta</button>
       <div id="error"></div>
     </form>
-    <small class="exclusive">Acesso exclusivo a membros aprovados</small>
+    <small class="exclusive">Seu cadastro ficará pendente até a aprovação do Comando.</small>
   </section>
 </div>
 
@@ -66,6 +68,27 @@
       <input name="password" type="password" placeholder="Senha (mínimo 8 caracteres)" minlength="8" required />
       <button type="submit" class="primary">Criar administrador</button>
       <div id="setup-error" class="form-error"></div>
+    </form>
+  </div>
+</div>
+
+<div id="register-modal" class="modal hidden">
+  <div class="modal-card register-card">
+    <button class="modal-close" type="button" id="close-register">×</button>
+    <div class="eyebrow">NOVO ACESSO GTM</div>
+    <h2>Criar minha conta</h2>
+    <p class="muted">Preencha seus dados. O cadastro será enviado ao Comando para aprovação. Seu registro só aparecerá no Efetivo após a aprovação.</p>
+    <form id="register-form">
+      <input name="nome" placeholder="Nome completo" required maxlength="120" />
+      <div class="form-grid-2">
+        <input name="matricula" placeholder="ID / matrícula" required inputmode="numeric" maxlength="12" />
+        <input name="patente" placeholder="Patente" required maxlength="80" />
+      </div>
+      <input name="telefone_cidade" placeholder="Telefone da cidade" required maxlength="30" />
+      <input name="username" placeholder="Usuário de acesso" required maxlength="40" autocomplete="username" />
+      <input name="password" type="password" placeholder="Senha (mínimo 8 caracteres)" minlength="8" required autocomplete="new-password" />
+      <button type="submit" class="primary">Enviar cadastro para aprovação</button>
+      <div id="register-error" class="form-error"></div>
     </form>
   </div>
 </div>

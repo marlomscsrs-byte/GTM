@@ -1,11 +1,13 @@
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
 const { Pool } = require("pg");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const app = express();
 const port = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -16,23 +18,29 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 const schemaPath = path.join(__dirname, "db", "schema.sql");
-const fs = require("fs");
 
 async function initializeDatabase() {
   const schema = fs.readFileSync(schemaPath, "utf8");
   await pool.query(schema);
-  console.log("Banco de dados GTM inicializado.");
+  console.log("Banco de dados GTM inicializado e efetivo sincronizado.");
 }
 
 function auth(req, res, next) {
   const token = (req.headers.authorization || "").replace("Bearer ", "");
   if (!token) return res.status(401).json({ error: "Não autenticado" });
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET || "dev-secret");
+    req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
     res.status(401).json({ error: "Sessão inválida" });
   }
+}
+
+function requireAdmin(req, res, next) {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Acesso restrito ao comando." });
+  }
+  next();
 }
 
 app.get("/api/health", async (_, res) => {
@@ -44,12 +52,12 @@ app.get("/api/health", async (_, res) => {
   }
 });
 
-
 app.get("/api/setup/status", async (_, res) => {
   try {
     const { rows } = await pool.query("SELECT count(*)::int AS n FROM usuarios");
     res.json({ needsSetup: rows[0].n === 0 });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Não foi possível verificar a configuração inicial." });
   }
 });
@@ -74,9 +82,9 @@ app.post("/api/setup/admin", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const result = await client.query(
-      `INSERT INTO usuarios (username, password_hash, nome, patente, email, ativo, aprovado)
-       VALUES ($1,$2,$3,$4,$5,true,true)
-       RETURNING id, username, nome, patente, email`,
+      `INSERT INTO usuarios (username, password_hash, nome, patente, email, role, ativo, aprovado, status_cadastro)
+       VALUES ($1,$2,$3,$4,$5,'admin',true,true,'aprovado')
+       RETURNING id, username, nome, patente, email, role`,
       [username.trim(), passwordHash, nome.trim(), patente || "Comando", email || null]
     );
     await client.query("COMMIT");
@@ -90,28 +98,95 @@ app.post("/api/setup/admin", async (req, res) => {
   }
 });
 
+app.post("/api/auth/register", async (req, res) => {
+  const { nome, matricula, patente, telefone_cidade, username, password } = req.body;
+  if (!nome || !matricula || !patente || !telefone_cidade || !username || !password) {
+    return res.status(400).json({ error: "Preencha nome, ID, patente, telefone da cidade, usuário e senha." });
+  }
+  if (password.length < 8) return res.status(400).json({ error: "A senha deve ter pelo menos 8 caracteres." });
+  if (!/^\d{1,12}$/.test(String(matricula).trim())) return res.status(400).json({ error: "O ID deve conter apenas números." });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existingUser = await client.query("SELECT id FROM usuarios WHERE lower(username)=lower($1)", [username.trim()]);
+    if (existingUser.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Este nome de usuário já está em uso." });
+    }
+    const existingId = await client.query("SELECT id FROM usuarios WHERE matricula=$1", [String(matricula).trim()]);
+    if (existingId.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Este ID já possui uma solicitação ou conta no sistema." });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const userResult = await client.query(
+      `INSERT INTO usuarios (username, password_hash, nome, patente, matricula, telefone_cidade, role, ativo, aprovado, status_cadastro)
+       VALUES ($1,$2,$3,$4,$5,$6,'operador',false,false,'pendente')
+       RETURNING id, username, nome, matricula, patente, telefone_cidade, role, aprovado, status_cadastro`,
+      [username.trim(), passwordHash, nome.trim(), patente.trim(), String(matricula).trim(), telefone_cidade.trim()]
+    );
+
+    await client.query(
+      `INSERT INTO logs (usuario_id, acao, entidade, entidade_id, detalhes)
+       VALUES ($1,'SOLICITAR_CADASTRO','usuarios',$1,$2)`,
+      [userResult.rows[0].id, JSON.stringify({ matricula: String(matricula).trim(), username: username.trim() })]
+    );
+    await client.query("COMMIT");
+    res.status(201).json({
+      ok: true,
+      pending: true,
+      message: "Cadastro enviado para aprovação do Comando. Aguarde a liberação para entrar no portal.",
+      user: userResult.rows[0]
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error(error);
+    res.status(500).json({ error: "Não foi possível enviar o cadastro." });
+  } finally {
+    client.release();
+  }
+});
+
 app.post("/api/auth/login", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: "Informe usuário e senha." });
 
   const { rows } = await pool.query(
-    `SELECT id, username, password_hash, nome, patente, ativo, aprovado
+    `SELECT id, username, password_hash, nome, matricula, patente, email, telefone_cidade, role, ativo, aprovado, status_cadastro
      FROM usuarios WHERE lower(username)=lower($1) LIMIT 1`, [username]
   );
 
   const user = rows[0];
-  if (!user || !user.ativo || !user.aprovado || !(await bcrypt.compare(password, user.password_hash))) {
+  if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ error: "Usuário ou senha inválidos." });
+  }
+  if (user.status_cadastro === 'pendente' || !user.aprovado) {
+    return res.status(403).json({ error: "Seu cadastro está aguardando aprovação do Comando." });
+  }
+  if (user.status_cadastro === 'recusado' || !user.ativo) {
+    return res.status(403).json({ error: "Seu cadastro não foi aprovado pelo Comando." });
   }
 
   await pool.query("UPDATE usuarios SET ultimo_acesso=now() WHERE id=$1", [user.id]);
 
   const token = jwt.sign(
-    { id: user.id, username: user.username, nome: user.nome, patente: user.patente },
-    process.env.JWT_SECRET || "dev-secret",
+    { id: user.id, username: user.username, nome: user.nome, patente: user.patente, telefone_cidade: user.telefone_cidade, role: user.role },
+    JWT_SECRET,
     { expiresIn: "8h" }
   );
-  res.json({ token, user: { id: user.id, username: user.username, nome: user.nome, patente: user.patente } });
+  res.json({
+    token,
+    user: {
+      id: user.id,
+      username: user.username,
+      nome: user.nome,
+      patente: user.patente,
+      telefone_cidade: user.telefone_cidade,
+      role: user.role
+    }
+  });
 });
 
 app.get("/api/dashboard", auth, async (_, res) => {
@@ -138,8 +213,96 @@ app.get("/api/dashboard", auth, async (_, res) => {
 
 app.get("/api/efetivo", auth, async (_, res) => {
   const { rows } = await pool.query(
-    `SELECT e.id, e.nome, e.matricula, e.patente, e.status, e.unidade, e.ativo
-     FROM efetivo e ORDER BY e.patente DESC, e.nome`
+    `SELECT e.id, e.nome, e.matricula, e.patente, e.status, e.unidade, e.ativo, e.telefone_cidade,
+            u.id AS usuario_id, u.username, u.aprovado AS conta_aprovada, u.ativo AS conta_ativa
+     FROM efetivo e
+     LEFT JOIN usuarios u ON u.id=e.usuario_id
+     ORDER BY CASE e.unidade
+       WHEN 'Comando' THEN 1 WHEN 'Sub-Comando' THEN 2 WHEN 'Supervisor' THEN 3
+       WHEN 'Piloto Oficial' THEN 4 WHEN 'Probatório' THEN 5 ELSE 9 END,
+       e.nome` 
+  );
+  res.json(rows);
+});
+
+app.get("/api/admin/cadastros-pendentes", auth, requireAdmin, async (_, res) => {
+  const { rows } = await pool.query(
+    `SELECT id, nome, matricula, patente, telefone_cidade, username, created_at
+     FROM usuarios
+     WHERE status_cadastro='pendente'
+     ORDER BY created_at ASC`
+  );
+  res.json(rows);
+});
+
+app.post("/api/admin/cadastros/:id/aprovar", auth, requireAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const userResult = await client.query(
+      `SELECT id, nome, matricula, patente, telefone_cidade, username, status_cadastro
+       FROM usuarios WHERE id=$1 FOR UPDATE`, [req.params.id]
+    );
+    const user = userResult.rows[0];
+    if (!user) { await client.query("ROLLBACK"); return res.status(404).json({ error: "Cadastro não encontrado." }); }
+    if (user.status_cadastro !== 'pendente') { await client.query("ROLLBACK"); return res.status(409).json({ error: "Este cadastro já foi processado." }); }
+
+    const duplicate = await client.query("SELECT id FROM efetivo WHERE matricula=$1", [user.matricula]);
+    if (duplicate.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "O ID informado já existe no efetivo." });
+    }
+
+    const efetivoResult = await client.query(
+      `INSERT INTO efetivo (usuario_id, nome, matricula, patente, status, unidade, ativo, telefone_cidade)
+       VALUES ($1,$2,$3,$4,'Ativo','A definir',true,$5)
+       RETURNING id`,
+      [user.id, user.nome, user.matricula, user.patente, user.telefone_cidade]
+    );
+
+    await client.query(
+      `UPDATE usuarios SET ativo=true, aprovado=true, status_cadastro='aprovado' WHERE id=$1`, [user.id]
+    );
+    await client.query(
+      `INSERT INTO logs (usuario_id, acao, entidade, entidade_id, detalhes)
+       VALUES ($1,'APROVAR_CADASTRO','efetivo',$2,$3)`,
+      [req.user.id, efetivoResult.rows[0].id, JSON.stringify({ usuario_id: user.id, matricula: user.matricula })]
+    );
+    await client.query("COMMIT");
+    res.json({ ok: true, message: "Cadastro aprovado e incluído no efetivo." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error(error);
+    res.status(500).json({ error: "Não foi possível aprovar o cadastro." });
+  } finally { client.release(); }
+});
+
+app.post("/api/admin/cadastros/:id/recusar", auth, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE usuarios SET ativo=false, aprovado=false, status_cadastro='recusado'
+       WHERE id=$1 AND status_cadastro='pendente' RETURNING id, nome, matricula`, [req.params.id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: "Cadastro pendente não encontrado." });
+    await pool.query(
+      `INSERT INTO logs (usuario_id, acao, entidade, entidade_id, detalhes)
+       VALUES ($1,'RECUSAR_CADASTRO','usuarios',$2,$3)`,
+      [req.user.id, result.rows[0].id, JSON.stringify({ matricula: result.rows[0].matricula })]
+    );
+    res.json({ ok: true, message: "Cadastro recusado." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Não foi possível recusar o cadastro." });
+  }
+});
+
+app.get("/api/admin/usuarios", auth, requireAdmin, async (_, res) => {
+  const { rows } = await pool.query(
+    `SELECT u.id, u.username, u.nome, u.matricula, u.patente, u.email, u.telefone_cidade, u.role, u.ativo, u.aprovado, u.status_cadastro, u.ultimo_acesso,
+            e.id AS efetivo_id, e.matricula
+     FROM usuarios u
+     LEFT JOIN efetivo e ON e.usuario_id=u.id
+     ORDER BY u.role DESC, u.nome`
   );
   res.json(rows);
 });
