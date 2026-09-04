@@ -502,13 +502,18 @@ async function savePersonalEdit(event){
 async function efetivoPage(){
   try{
     const rows=await api("/api/efetivo");
-    const grupos=["Comando","Sub-Comando","Supervisor","Piloto Oficial","Probatório"];
+    const grupos=["Comando","Sub-Comando","Supervisor","Piloto Oficial","Piloto Probatório","Probatório","Outros"];
     const total=rows.length;
     const ativos=rows.filter(r=>r.ativo).length;
     const contas=rows.filter(r=>r.usuario_id).length;
     const agrupados={};
     grupos.forEach(g=>agrupados[g]=[]);
-    rows.forEach(r=>(agrupados[r.unidade] ||= []).push(r));
+    rows.forEach(r=>{
+      let grupo=r.unidade || '';
+      if (grupo === 'Probatório' && String(r.nivel_carreira||'').toLowerCase()==='probatorio') grupo='Piloto Probatório';
+      if (!agrupados[grupo]) grupo='Outros';
+      agrupados[grupo].push(r);
+    });
 
     page.innerHTML=`<div class="page-head"><div><h1>Efetivo</h1><p>Quadro oficial da G.T.M. • ${total} integrante(s) aprovados</p></div>
       <div class="efetivo-kpis"><span>${ativos} ativos</span><span>${total-ativos} inativos</span><span>${contas}/${total} contas vinculadas</span></div></div>
@@ -559,6 +564,7 @@ async function adminPage(){
       api('/api/admin/cadastros-pendentes'),
       api('/api/admin/usuarios')
     ]);
+    window.__adminAccounts=rows;
     page.innerHTML=`<div class="page-head"><div><h1>Administração</h1><p>Aprovação de novos cadastros, contas de acesso e vínculo com o efetivo.</p></div>
       ${pending.length?`<span class="pending-badge">${pending.length} aguardando aprovação</span>`:''}</div>
     <div class="section approval-section"><div class="section-title-row"><div><h3>SOLICITAÇÕES DE CADASTRO</h3><p class="section-sub">O integrante só entra no Efetivo depois que o Comando aprovar.</p></div><span class="pill">COMANDO</span></div>
@@ -577,8 +583,8 @@ async function adminPage(){
     </tr>`).join('') || '<tr><td colspan="4" style="color:#777">Nenhum piloto probatório cadastrado.</td></tr>'}
     </tbody></table></div></div>
     <div class="section"><div class="section-title-row"><div><h3>CONTAS DO SISTEMA</h3><p class="section-sub">Somente cadastros aprovados aparecem vinculados ao efetivo.</p></div></div>
-    <div class="table-wrap"><table class="table"><thead><tr><th>USUÁRIO</th><th>NOME</th><th>ID</th><th>CARREIRA</th><th>TELEFONE</th><th>PERFIL</th><th>STATUS</th></tr></thead><tbody>
-    ${rows.map(r=>`<tr><td><b>${escapeHtml(r.username)}</b></td><td>${escapeHtml(r.nome)}</td><td>${escapeHtml(r.matricula||'—')}</td><td>${escapeHtml(r.nivel_carreira==='oficial'?'Piloto Oficial':r.nivel_carreira==='probatorio'?'Piloto Probatório':(r.patente||'—'))}</td><td>${escapeHtml(r.telefone_cidade||'—')}</td><td>${r.role==='admin'?'Comando':'Operador'}</td><td><span class="status ${r.status_cadastro==='aprovado'&&r.ativo?'status-active':r.status_cadastro==='pendente'?'status-pending':'status-inactive'}">${r.status_cadastro==='aprovado'&&r.ativo?'Aprovado':r.status_cadastro==='pendente'?'Pendente':'Recusado'}</span></td></tr>`).join('')}
+    <div class="table-wrap"><table class="table"><thead><tr><th>USUÁRIO</th><th>NOME</th><th>ID</th><th>CARREIRA</th><th>TELEFONE</th><th>PERFIL</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td><b>${escapeHtml(r.username)}</b></td><td>${escapeHtml(r.nome)}</td><td>${escapeHtml(r.matricula||'—')}</td><td>${escapeHtml(r.nivel_carreira==='oficial'?'Piloto Oficial':r.nivel_carreira==='probatorio'?'Piloto Probatório':(r.patente||'—'))}</td><td>${escapeHtml(r.telefone_cidade||'—')}</td><td>${['admin','comando','administrador'].includes(String(r.role||'').toLowerCase())?'Comando':'Operador'}</td><td><span class="status ${r.status_cadastro==='aprovado'&&r.ativo?'status-active':r.status_cadastro==='pendente'?'status-pending':'status-inactive'}">${r.status_cadastro==='aprovado'&&r.ativo?'Aprovado':r.status_cadastro==='pendente'?'Pendente':'Recusado'}</span></td><td><div class="admin-account-actions"><button class="mini-btn" onclick="openAccountEdit('${escapeAttr(r.id)}')">Editar</button><button class="mini-btn danger-mini" onclick="deleteAccount('${escapeAttr(r.id)}','${escapeAttr(r.username)}')">Excluir</button></div></td></tr>`).join('')}
     </tbody></table></div></div>`;
   }catch(e){ page.innerHTML=`<div class="section"><h3>Não foi possível carregar a administração</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`; }
 }
@@ -641,6 +647,23 @@ async function processCadastro(id, action){
     alert(data.message || 'Operação concluída.');
     await adminPage();
   }catch(e){ alert(e.message); }
+}
+
+
+function openAccountEdit(id){
+  const data=window.__adminAccounts?.find(x=>String(x.id)===String(id));
+  if(!data) return;
+  document.getElementById('account-edit-modal')?.remove();
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="account-edit-modal"><div class="modal-card account-modal-card"><button class="modal-close" type="button" onclick="document.getElementById('account-edit-modal')?.remove()">×</button><span class="eyebrow">ADMINISTRAÇÃO</span><h2>Editar conta</h2><p class="approval-modal-user">${escapeHtml(data.username)}</p><form onsubmit="saveAccountEdit(event,'${escapeAttr(id)}')"><label class="approval-label">Nome<input id="account-edit-nome" value="${escapeAttr(data.nome||'')}"></label><label class="approval-label">E-mail<input id="account-edit-email" type="email" value="${escapeAttr(data.email||'')}"></label><label class="approval-label">Telefone<input id="account-edit-telefone" value="${escapeAttr(data.telefone_cidade||'')}"></label><label class="approval-label">Perfil<select id="account-edit-role"><option value="operador" ${data.role==='operador'?'selected':''}>Operador</option><option value="admin" ${data.role==='admin'?'selected':''}>Admin</option><option value="comando" ${data.role==='comando'?'selected':''}>Comando</option><option value="administrador" ${data.role==='administrador'?'selected':''}>Administrador</option></select></label><label class="approval-label">Status<select id="account-edit-ativo"><option value="true" ${data.ativo?'selected':''}>Ativo</option><option value="false" ${!data.ativo?'selected':''}>Inativo</option></select></label><div class="approval-modal-actions"><button class="btn secondary" type="button" onclick="document.getElementById('account-edit-modal')?.remove()">Cancelar</button><button class="btn" type="submit">Salvar alterações</button></div><div id="account-edit-error" class="form-error"></div></form></div></div>`);
+}
+async function saveAccountEdit(event,id){
+  event.preventDefault();
+  try{const d=await api(`/api/admin/usuarios/${encodeURIComponent(id)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:document.getElementById('account-edit-nome').value,email:document.getElementById('account-edit-email').value,telefone_cidade:document.getElementById('account-edit-telefone').value,role:document.getElementById('account-edit-role').value,ativo:document.getElementById('account-edit-ativo').value==='true'})});document.getElementById('account-edit-modal')?.remove();alert(d.message||'Conta atualizada.');await adminPage();}catch(e){document.getElementById('account-edit-error').textContent=e.message;}
+}
+async function deleteAccount(id,username){
+  if(String(id)===String(currentUser?.id)){alert('Você não pode excluir sua própria conta.');return;}
+  if(!confirm(`Excluir a conta "${username}"? O acesso e o vínculo com o efetivo serão removidos.`)) return;
+  try{const d=await api(`/api/admin/usuarios/${encodeURIComponent(id)}`,{method:'DELETE'});alert(d.message||'Conta excluída.');await adminPage();}catch(e){alert(e.message);}
 }
 
 async function progressaoPage(){

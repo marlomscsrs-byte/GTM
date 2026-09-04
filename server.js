@@ -426,7 +426,7 @@ app.get("/api/ranking", auth, async (req, res) => {
 
 app.get("/api/efetivo", auth, async (_, res) => {
   const { rows } = await pool.query(
-    `SELECT e.id, e.nome, e.matricula, e.patente, e.status, e.unidade, e.ativo, e.telefone_cidade,
+    `SELECT e.id, e.nome, e.matricula, e.patente, e.status, e.unidade, e.ativo, e.telefone_cidade, e.nivel_carreira,
             u.id AS usuario_id, u.username, u.aprovado AS conta_aprovada, u.ativo AS conta_ativa
      FROM efetivo e
      LEFT JOIN usuarios u ON u.id=e.usuario_id
@@ -639,6 +639,41 @@ app.get("/api/admin/usuarios", auth, requireAdmin, async (_, res) => {
      ORDER BY u.role DESC, u.nome`
   );
   res.json(rows);
+});
+
+
+app.put("/api/admin/usuarios/:id", auth, requireAdmin, async (req, res) => {
+  try {
+    const { nome, email, telefone_cidade, role, ativo } = req.body || {};
+    if (!nome || !String(nome).trim()) return res.status(400).json({ error: "O nome é obrigatório." });
+    const allowedRoles = ['admin','comando','administrador','operador'];
+    const nextRole = allowedRoles.includes(String(role || '').trim().toLowerCase()) ? String(role).trim().toLowerCase() : 'operador';
+    if (String(req.params.id) === String(req.user.id) && nextRole === 'operador') return res.status(400).json({ error: "Você não pode remover seu próprio acesso administrativo." });
+    const { rows } = await pool.query(
+      `UPDATE usuarios SET nome=$1, email=$2, telefone_cidade=$3, role=$4, ativo=$5 WHERE id=$6 RETURNING id,username,nome,email,telefone_cidade,role,ativo,aprovado,status_cadastro`,
+      [String(nome).trim(), String(email || '').trim() || null, String(telefone_cidade || '').trim() || null, nextRole, ativo !== false, req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Conta não encontrada." });
+    await pool.query(`UPDATE efetivo SET nome=$1, telefone_cidade=$2, ativo=$3 WHERE usuario_id=$4`, [rows[0].nome, rows[0].telefone_cidade, rows[0].ativo, rows[0].id]);
+    await pool.query(`INSERT INTO logs (usuario_id,acao,entidade,entidade_id,detalhes) VALUES ($1,'EDITAR_CONTA','usuarios',$2,$3)`, [req.user.id, rows[0].id, JSON.stringify({role:nextRole,ativo:rows[0].ativo})]);
+    res.json({ ok:true, user:rows[0], message:'Conta atualizada com sucesso.' });
+  } catch (error) { console.error(error); res.status(500).json({ error:'Não foi possível editar a conta.' }); }
+});
+
+app.delete("/api/admin/usuarios/:id", auth, requireAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (String(req.params.id) === String(req.user.id)) return res.status(400).json({ error: "Você não pode excluir sua própria conta." });
+    await client.query('BEGIN');
+    const found = await client.query(`SELECT id,username FROM usuarios WHERE id=$1 FOR UPDATE`, [req.params.id]);
+    if (!found.rows[0]) { await client.query('ROLLBACK'); return res.status(404).json({ error:'Conta não encontrada.' }); }
+    await client.query(`DELETE FROM efetivo WHERE usuario_id=$1`, [req.params.id]);
+    await client.query(`DELETE FROM usuarios WHERE id=$1`, [req.params.id]);
+    await client.query(`INSERT INTO logs (usuario_id,acao,entidade,entidade_id,detalhes) VALUES ($1,'EXCLUIR_CONTA','usuarios',$2,$3)`, [req.user.id, req.params.id, JSON.stringify({username:found.rows[0].username})]);
+    await client.query('COMMIT');
+    res.json({ok:true,message:'Conta excluída com sucesso.'});
+  } catch (error) { await client.query('ROLLBACK').catch(()=>{}); console.error(error); res.status(500).json({error:'Não foi possível excluir a conta.'}); }
+  finally { client.release(); }
 });
 
 app.post("/api/ocorrencias", auth, async (req, res) => {
