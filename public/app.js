@@ -128,16 +128,19 @@ async function loadPage(name){
 
 async function dashboard(){
   try{
-    const d=await api("/api/dashboard");
-    const p=await api("/api/ponto/status");
+    const [d,p,statusRanking]=await Promise.all([
+      api("/api/dashboard"),
+      api("/api/ponto/status"),
+      api("/api/ranking?period=week")
+    ]);
     const s=d.stats||{};
     const nome=escapeHtml(currentUser?.nome||"Operador");
     const patente=escapeHtml(currentUser?.patente||"Integrante GTM");
-    const role=currentUser?.role === 'admin' ? 'Comando' : 'Operador';
     const active=!!p.current;
     const weekHours=Number(p.week?.hours||0);
     const totalHours=Number(p.total?.hours||0);
     const team=p.team||[];
+    const ranking=Array.isArray(statusRanking)?statusRanking:[];
     page.innerHTML=`
       <div class="dashboard-hero ${active?'on-duty':''}">
         <div class="hero-copy">
@@ -145,7 +148,6 @@ async function dashboard(){
           <h1>Bom dia, ${nome}!</h1>
           <p>“Toda missão bem executada começa com uma boa preparação.”</p>
           <small>${patente} • painel pessoal</small>
-          <div class="duty-status ${active?'duty-on':'duty-off'}"><span>●</span>${active?`Em serviço desde ${formatTime(p.current.entrada)}`:'Fora de serviço'}</div>
         </div>
         <div class="hero-metrics">
           ${heroMetric(p.week?.points?.toFixed?.(1)||'0.0','PONTOS DA SEMANA','1 ponto / hora')}
@@ -153,7 +155,7 @@ async function dashboard(){
           ${heroMetric(p.total?.points?.toFixed?.(1)||'0.0','PONTOS TOTAIS','1 ponto / hora')}
           ${heroMetric(formatHours(totalHours),'HORAS TOTAIS','histórico')}
         </div>
-        <button class="service-button ${active?'service-stop':''}" onclick="toggleService()">${active?'↪ Encerrar serviço':'↪ Iniciar serviço'}</button>
+        <button class="service-button ${active?'service-stop':''}" onclick="toggleService()">↪ ${active?'Encerrar serviço':'Iniciar serviço'}</button>
       </div>
 
       <div class="dashboard-grid">
@@ -161,36 +163,22 @@ async function dashboard(){
           <div class="panel-heading"><div><span class="eyebrow">ATALHOS</span><h2>Ações principais</h2></div></div>
           <div class="quick-grid">
             ${dashboardAction('▤','Nova QRU','Registrar ocorrência','ocorrencias')}
-            ${dashboardAction('⚔','Nova ação','Adicionar atividade','acoes')}
-            ${dashboardAction('♜','Ranking','Ver classificação','relatorios')}
-            ${dashboardAction('◷','Meu serviço','Bater ponto e histórico','escala')}
-            ${dashboardAction('⚑','Avisos','Comunicados da unidade','comunicados')}
+            ${dashboardAction('◇','Nova ação','Adicionar atividade','acoes')}
+            ${dashboardAction('♟','Ranking','Ver classificação','relatorios')}
+            ${dashboardAction('▥','Setor pessoal','Solicitações','pessoal')}
+            ${dashboardAction('⚑','Avisos','Comunicados','comunicados')}
             ${dashboardAction('♙','Hierarquia','Estrutura da unidade','efetivo')}
           </div>
         </section>
 
         <aside class="side-panel">
-          <div class="panel-heading"><div><span class="eyebrow">DESTAQUE</span><h2>Resumo operacional</h2></div></div>
-          ${rankRow('01','Efetivo ativo',s.efetivo||0,'integrantes')}
-          ${rankRow('02','Ocorrências',s.ocorrencias||0,'últimos 7 dias')}
-          ${rankRow('03','Serviços hoje',s.servicos||0,'registros')}
-          ${rankRow('04','Cursos ativos',s.cursos||0,'treinamentos')}
-          ${rankRow('05','Em serviço',team.length,'agora')}
+          <div class="panel-heading"><div><span class="eyebrow">DESTAQUE</span><h2>Top semanal</h2></div></div>
+          ${ranking.length ? ranking.slice(0,5).map((m,i)=>rankRow(String(i+1).padStart(2,'0'),m.nome||'Integrante',Number(m.pontos||0).toFixed(1),m.patente||'Integrante')).join('') : '<div class="dashboard-empty-rank">Ainda não há pontuação registrada nesta semana.</div>'}
         </aside>
 
         <section class="status-panel">
           <div class="panel-heading"><div><span class="eyebrow">STATUS OPERACIONAL</span><h2>Equipe em serviço</h2></div><span class="live-dot">● ${team.length?'ATIVA':'AGUARDANDO'}</span></div>
-          ${team.length?team.slice(0,6).map((m,i)=>`<div class="team-service-row"><div class="team-avatar">${escapeHtml((m.nome||'?').charAt(0).toUpperCase())}</div><div><b>${escapeHtml(m.nome)}</b><small>${escapeHtml(m.patente||'Integrante')} • ID ${escapeHtml(m.matricula||'—')}</small></div><span>Desde ${formatTime(m.entrada)}</span></div>`).join(''):`<div class="service-empty"><div class="service-icon">◉</div><div><b>Nenhum integrante em serviço</b><small>Inicie seu serviço pelo botão acima quando estiver de plantão.</small></div><button class="outline-btn" onclick="toggleService()">${active?'Encerrar':'Iniciar serviço'}</button></div>`}
-        </section>
-
-        <section class="profile-panel">
-          <div class="panel-heading"><div><span class="eyebrow">MEU PERFIL</span><h2>Acesso atual</h2></div></div>
-          <div class="profile-summary"><div class="profile-badge">${escapeHtml((currentUser?.nome||'O').charAt(0).toUpperCase())}</div><div><b>${nome}</b><small>${patente}</small></div></div>
-          <div class="profile-rows">
-            <div><span>ID</span><b>${escapeHtml(currentUser?.matricula||'—')}</b></div>
-            <div><span>Perfil</span><b>${role}</b></div>
-            <div><span>Sessão</span><b class="online-text">● Ativa</b></div>
-          </div>
+          ${team.length?team.slice(0,6).map(m=>`<div class="team-service-row"><div class="team-avatar">${escapeHtml((m.nome||'?').charAt(0).toUpperCase())}</div><div><b>${escapeHtml(m.nome)}</b><small>${escapeHtml(m.patente||'Integrante')}</small></div><span><i></i> Em serviço<br><small>${formatTime(m.entrada)}</small></span></div>`).join(''):`<div class="service-empty"><div class="service-icon">◉</div><div><b>Nenhum integrante em serviço</b><small>Inicie seu serviço pelo botão acima quando estiver de plantão.</small></div><button class="outline-btn" onclick="toggleService()">${active?'Encerrar':'Iniciar serviço'}</button></div>`}
         </section>
       </div>`;
   }catch(e){ page.innerHTML=`<div class="section"><h3>Banco de dados indisponível</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`}

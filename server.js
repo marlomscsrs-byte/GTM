@@ -333,6 +333,28 @@ app.get("/api/dashboard", auth, async (_, res) => {
   });
 });
 
+app.get("/api/ranking", auth, async (req, res) => {
+  try {
+    const period = req.query.period === 'week' ? 'week' : 'week';
+    const { rows } = await pool.query(`
+      SELECT e.nome, e.patente,
+             ROUND(COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ps.saida, now()) - ps.entrada))/3600.0),0)::numeric,1) AS pontos
+      FROM efetivo e
+      LEFT JOIN pontos_servico ps ON ps.efetivo_id=e.id
+        AND ps.entrada >= date_trunc('week', now())
+      WHERE e.ativo=true
+      GROUP BY e.id, e.nome, e.patente
+      HAVING COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ps.saida, now()) - ps.entrada))/3600.0),0) > 0
+      ORDER BY pontos DESC, e.nome ASC
+      LIMIT 5
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({error:"Não foi possível carregar o ranking semanal."});
+  }
+});
+
 app.get("/api/efetivo", auth, async (_, res) => {
   const { rows } = await pool.query(
     `SELECT e.id, e.nome, e.matricula, e.patente, e.status, e.unidade, e.ativo, e.telefone_cidade,
