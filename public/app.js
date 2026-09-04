@@ -555,7 +555,7 @@ async function actionPage(){
       </section>
 
       <section class="action-section">
-        <label class="action-field-label">Título<input id="acao-titulo" value="Ação - Fleeca 68"></label>
+        <label class="action-field-label">Título<input id="acao-titulo" value="R.O - Fleeca 68"></label>
         <label class="action-field-label action-description">Descrição / Observações<textarea id="acao-descricao"></textarea></label>
       </section>
 
@@ -579,12 +579,12 @@ async function actionPage(){
 }
 
 function actionVehicleCard(n){
-  return `<div class="action-vehicle-card" data-vehicle="${n}"><h3>VEÍCULO ${n}</h3><label>Veículo / placa / descrição<input class="acao-veiculo-desc" placeholder="Ex.: Sultan RS — ABC1234"></label><label>Desfecho<select class="acao-veiculo-desfecho"><option>Não informado</option><option>Recuperado</option><option>Apreendido</option><option>Destruído</option><option>Fugiu</option></select></label></div>`;
+  return `<div class="action-vehicle-card" data-vehicle="${n}"><h3>VEÍCULO ${n}</h3><label>Veículo / placa / descrição<input class="acao-veiculo-desc" placeholder="Ex.: Sultan RS — ABC1234"></label><label>Desfecho<select class="acao-veiculo-desfecho"><option>Não informado</option><option>Preso / apreendido</option><option>Deu fuga</option></select></label></div>`;
 }
 function addActionVehicle(){
   const wrap=document.getElementById('acao-veiculos'); if(!wrap)return; const n=(window.actionVehicleCount||3)+1; window.actionVehicleCount=n; wrap.insertAdjacentHTML('beforeend',actionVehicleCard(n));
 }
-function selectActionType(btn){ document.querySelectorAll('.action-type').forEach(x=>x.classList.remove('selected')); btn.classList.add('selected'); const title=document.getElementById('acao-titulo'); if(title) title.value=`Ação - ${btn.dataset.type}`; }
+function selectActionType(btn){ document.querySelectorAll('.action-type').forEach(x=>x.classList.remove('selected')); btn.classList.add('selected'); const title=document.getElementById('acao-titulo'); if(title) title.value=`R.O - ${btn.dataset.type}`; }
 function selectActionResult(btn){ document.querySelectorAll('.action-result').forEach(x=>x.classList.remove('selected')); btn.classList.add('selected'); }
 function renderActionOfficers(rows, selected){
   const q=(document.getElementById('acao-search')?.value||'').toLowerCase().trim();
@@ -598,7 +598,7 @@ async function submitAction(){
   const selected=window.actionSelected||[]; if(!selected.length){ alert('Selecione pelo menos um oficial envolvido.'); return; }
   const tipo=document.querySelector('.action-type.selected')?.dataset.type||'Fleeca 68'; const resultado=document.querySelector('.action-result.selected')?.dataset.result||'Vitória';
   const veiculos=[...document.querySelectorAll('.action-vehicle-card')].map(card=>({descricao:card.querySelector('.acao-veiculo-desc')?.value.trim()||'',desfecho:card.querySelector('.acao-veiculo-desfecho')?.value||'Não informado'})).filter(v=>v.descricao);
-  const body={tipo,resultado,negociacao:document.getElementById('acao-negociacao')?.value||'',titulo:document.getElementById('acao-titulo')?.value.trim()||`Ação - ${tipo}`,descricao:document.getElementById('acao-descricao')?.value||'',veiculos,oficiais:selected.map(x=>({id:x.id,nome:x.nome,matricula:x.matricula,patente:x.patente}))};
+  const body={tipo,resultado,negociacao:document.getElementById('acao-negociacao')?.value||'',titulo:document.getElementById('acao-titulo')?.value.trim()||`R.O - ${tipo}`,descricao:document.getElementById('acao-descricao')?.value||'',veiculos,oficiais:selected.map(x=>({id:x.id,nome:x.nome,matricula:x.matricula,patente:x.patente}))};
   try{ const data=await api('/api/acoes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); alert(data.message||'Ação registrada com sucesso.'); loadPage('dashboard'); }catch(e){ alert(e.message); }
 }
 
