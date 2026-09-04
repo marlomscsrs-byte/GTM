@@ -8,21 +8,24 @@
 </head>
 <body>
 <div id="login" class="login">
-  <div class="login-art-label"><span>GTM</span><small>GRUPAMENTO TÁTICO DE MOTOCICLETAS</small></div>
-  <section class="login-card">
-    <img class="login-logo" src="assets/GTM.png">
-    <span class="overline">CENTRAL OPERACIONAL</span>
-    <h1>Portal <i>GTM</i></h1>
-    <p>Gestão operacional integrada</p>
+  <div class="login-visual" aria-hidden="true">
+    <div class="login-visual-overlay"></div>
+    <div class="login-visual-top"><span>GTM</span><small>GRUPAMENTO TÁTICO DE MOTOCICLETAS</small></div>
+    <div class="login-visual-bottom"><span>DISCIPLINA · TÉCNICA · VELOCIDADE · RESULTADO</span><small>CENTRAL OPERACIONAL</small></div>
+  </div>
+  <section class="login-panel">
+    <div class="login-brand"><img class="login-logo" src="assets/GTM.png" alt="GTM"><div><span class="overline">CENTRAL OPERACIONAL</span><strong>PORTAL <i>GTM</i></strong><small>Grupamento Tático de Motocicletas</small></div></div>
+    <div class="login-heading"><span class="eyebrow">ACESSO CONTROLADO</span><h1>Bem-vindo ao Portal GTM</h1><p>Gestão operacional integrada da unidade.</p></div>
     <div class="approval-info"><span>●</span><div><b>Acesso controlado</b><small>Novos cadastros passam por aprovação do Comando.</small></div></div>
-    <form id="form">
-      <label>Usuário<input id="username" placeholder="Digite seu usuário" required></label>
-      <label>Senha<input id="password" type="password" placeholder="Digite sua senha" required></label>
-      <button>Entrar <span>→</span></button>
+    <form id="form" class="login-form">
+      <label>Usuário<input id="username" placeholder="Digite seu usuário" autocomplete="username" required></label>
+      <label>Senha<input id="password" type="password" placeholder="Digite sua senha" autocomplete="current-password" required></label>
+      <button class="login-submit">Entrar <span>→</span></button>
       <button type="button" class="secondary-login" id="open-register">Criar minha conta</button>
       <div id="error"></div>
     </form>
     <small class="exclusive">Seu cadastro ficará pendente até a aprovação do Comando.</small>
+    <div class="login-footer"><span>GTM</span><small>DISCIPLINA · TÉCNICA · RESULTADO</small></div>
   </section>
 </div>
 
