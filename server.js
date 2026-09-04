@@ -539,6 +539,48 @@ app.get("/api/acoes", auth, async (_, res) => {
     res.status(500).json({ error: 'Não foi possível carregar as ações.' });
   }
 });
+
+app.get("/api/pessoal", auth, async (req, res) => {
+  try {
+    const [userQ, pointQ, historyQ, certQ, eventQ, actionQ] = await Promise.all([
+      pool.query(`SELECT u.id,u.nome,u.matricula,u.patente,u.telefone_cidade,u.username,u.ultimo_acesso,u.created_at,
+                         e.data_ingresso,e.status,e.unidade
+                  FROM usuarios u LEFT JOIN efetivo e ON e.usuario_id=u.id
+                  WHERE u.id=$1 LIMIT 1`, [req.user.id]),
+      pool.query(`SELECT
+                    COALESCE(SUM(CASE WHEN entrada >= date_trunc('week', now()) THEN EXTRACT(EPOCH FROM (COALESCE(saida,now())-entrada))/3600.0 ELSE 0 END),0) AS week_hours,
+                    COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(saida,now())-entrada))/3600.0),0) AS total_hours
+                  FROM pontos_servico WHERE usuario_id=$1`, [req.user.id]),
+      pool.query(`SELECT ps.id, ps.entrada, ps.saida, ps.status,
+                         ROUND((EXTRACT(EPOCH FROM (COALESCE(ps.saida,now())-ps.entrada))/3600.0)::numeric,2) AS horas
+                  FROM pontos_servico ps WHERE ps.usuario_id=$1 ORDER BY ps.entrada DESC LIMIT 10`, [req.user.id]),
+      pool.query(`SELECT c.nome,c.descricao,cert.concluido_em,cert.validade,cert.status
+                  FROM certificacoes cert JOIN cursos c ON c.id=cert.curso_id
+                  JOIN efetivo e ON e.id=cert.efetivo_id WHERE e.usuario_id=$1
+                  ORDER BY cert.concluido_em DESC NULLS LAST,c.nome LIMIT 10`, [req.user.id]),
+      pool.query(`SELECT COUNT(*) FILTER (WHERE status='confirmado')::int AS presencas,
+                         COUNT(*) FILTER (WHERE status='atrasado')::int AS atrasos,
+                         COUNT(*) FILTER (WHERE status='falta')::int AS faltas
+                  FROM evento_participantes WHERE usuario_id=$1`, [req.user.id]),
+      pool.query(`SELECT id,titulo,tipo,created_at FROM acoes WHERE usuario_id=$1 ORDER BY created_at DESC LIMIT 20`, [req.user.id]).catch(()=>({rows:[]}))
+    ]);
+    const u=userQ.rows[0]||{};
+    const pt=pointQ.rows[0]||{};
+    const weekHours=Number(pt.week_hours||0), totalHours=Number(pt.total_hours||0);
+    const daysInRank=u.data_ingresso ? Math.max(0, Math.floor((Date.now()-new Date(u.data_ingresso).getTime())/86400000)) : 0;
+    res.json({
+      user:u,
+      metrics:{weekPoints:Number(weekHours.toFixed(1)),weekHours,totalPoints:Number(totalHours.toFixed(1)),totalHours,daysInRank},
+      history:historyQ.rows,
+      courses:certQ.rows,
+      events:eventQ.rows[0]||{presencas:0,atrasos:0,faltas:0},
+      warnings:0,
+      coursesTaught:0,
+      actions:actionQ.rows
+    });
+  } catch(error) { console.error(error); res.status(500).json({error:"Não foi possível carregar seus dados pessoais."}); }
+});
+
 app.get("/api/ocorrencias", auth, async (_, res) => {
   const { rows } = await pool.query(
     `SELECT id, protocolo, tipo, titulo, local, status, created_at

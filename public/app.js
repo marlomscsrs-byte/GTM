@@ -114,6 +114,7 @@ async function loadPage(name){
     frota:["Frota","Motocicletas e manutenção"],
     manual:["Manual","Procedimentos operacionais"],
     relatorios:["Relatórios","Estatísticas e indicadores"],
+    pessoal:["Pessoal","Seu perfil, desempenho e segurança"],
     admin:["Administração","Usuários, contas e configurações"]
   };
   const [title,sub]=titles[name]||titles.dashboard;
@@ -123,6 +124,7 @@ async function loadPage(name){
   if(name==="ocorrencias") return qruPage();
   if(name==="acoes") return actionPage();
   if(name==="admin") return adminPage();
+  if(name==="pessoal") return pessoalPage();
   if(name==="manual") return manualPage();
   page.innerHTML=`<div class="page-head"><div><h1>${title}</h1><p>${sub}</p></div></div>
   <div class="section"><h3>EM CONSTRUÇÃO</h3><p style="color:#6d7e90;font-size:11px">Este módulo já está previsto na arquitetura do banco PostgreSQL. A próxima etapa adicionará os formulários e operações CRUD.</p></div>`;
@@ -316,6 +318,107 @@ function rankRow(pos,title,value,sub){return `<div class="rank-row"><span class=
 
 function stat(n,label,sub){return `<div class="stat"><label>${label}</label><b>${n}</b><small>● ${sub}</small></div>`}
 function action(icon,title,sub,target){return `<button class="action" onclick="loadPage('${target}')"><div class="ico">${icon}</div><strong>${title}</strong><small>${sub}</small></button>`}
+
+async function pessoalPage(){
+  try{
+    const d=await api('/api/pessoal');
+    const u=d.user||{}, m=d.metrics||{}, ev=d.events||{};
+    const initials=escapeHtml((u.nome||'GTM').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase());
+    const rank=escapeHtml(u.patente||'Integrante GTM');
+    const courses=Array.isArray(d.courses)?d.courses:[];
+    const history=Array.isArray(d.history)?d.history:[];
+    const actions=Array.isArray(d.actions)?d.actions:[];
+    const avatar=localStorage.getItem('gtm_avatar')||'';
+    const profileImage=avatar?`<img src="${avatar}" alt="Foto de ${escapeAttr(u.nome||'perfil')}">`:`<span>${initials}</span>`;
+    const days=Math.max(0,Number(m.daysInRank||0));
+    const progress=(value,max)=>Math.min(100,Math.max(0,(Number(value)||0)/max*100));
+    page.innerHTML=`
+      <div class="personal-page">
+        <section class="personal-profile-card">
+          <div class="personal-avatar-wrap"><div class="personal-avatar" id="personal-avatar">${profileImage}</div></div>
+          <div class="personal-profile-main">
+            <span class="eyebrow">DADOS DO OFICIAL</span>
+            <h1>${escapeHtml(u.nome||'Operador')}</h1>
+            <span class="personal-rank">${rank}</span>
+            <p>Passaporte: <b>${escapeHtml(u.matricula||'—')}</b> <span>•</span> Desde ${escapeHtml(u.data_ingresso?formatLongDate(u.data_ingresso):'não informado')}</p>
+            <div class="personal-profile-actions">
+              <label class="btn secondary personal-upload">Trocar ícone<input type="file" accept="image/png,image/jpeg,image/webp" onchange="changePersonalAvatar(this)"></label>
+              <button class="btn secondary" onclick="removePersonalAvatar()">Remover imagem</button>
+            </div>
+            <small>PNG, JPG ou WEBP • otimizado automaticamente</small>
+          </div>
+        </section>
+
+        <section class="personal-kpis">
+          ${personalKpi(Number(m.weekPoints||0).toFixed(1),'Pts Semana')}
+          ${personalKpi(formatHours(m.weekHours||0),'Horas Semana')}
+          ${personalKpi(Number(m.totalPoints||0).toFixed(1),'Pts Total')}
+          ${personalKpi(formatHours(m.totalHours||0),'Horas Totais')}
+          ${personalKpi(days,'Dias na patente')}
+        </section>
+
+        <div class="personal-main-grid">
+          <section class="personal-panel performance-panel">
+            <div class="personal-panel-head"><div><span class="eyebrow">DESEMPENHO</span><h2>Meu desempenho</h2><p>Evolução e previsão para o próximo UP</p></div><span class="personal-badge">Previsão mínima: ${Math.max(0,20-days)} dia(s)</span></div>
+            ${personalProgress('Horas',m.totalHours||0,12,formatHours(m.totalHours||0)+' / 12h')}
+            ${personalProgress('Pontos semanais',m.weekPoints||0,10,Number(m.weekPoints||0).toFixed(1)+' pts / 10 pts')}
+            ${personalProgress('Dias na patente',days,20,days+' dias / 20 dias')}
+            ${personalProgress('Recrutamentos',0,2,'0 / 2')}
+          </section>
+
+          <section class="personal-panel events-personal-panel">
+            <div class="personal-panel-head"><div><span class="eyebrow">PARTICIPAÇÃO</span><h2>Presença em eventos</h2></div></div>
+            <div class="attendance-grid">
+              ${attendanceKpi(Number(ev.presencas||0),'Presenças')}
+              ${attendanceKpi(Number(ev.atrasos||0),'Atrasos')}
+              ${attendanceKpi(Number(ev.faltas||0),'Faltas')}
+            </div>
+            <div class="personal-empty-line">${Number(ev.presencas||0)+Number(ev.atrasos||0)+Number(ev.faltas||0)?'Seu histórico de participação está registrado.':'Nenhuma presença registrada.'}</div>
+          </section>
+        </div>
+
+        <div class="personal-two-columns">
+          <section class="personal-panel history-panel">
+            <div class="personal-panel-head"><div><span class="eyebrow">ATIVIDADE</span><h2>Histórico de pontos</h2></div></div>
+            <div class="personal-history-list">
+              ${actions.length?actions.map(a=>`<div class="personal-history-item"><div><b>${escapeHtml(a.titulo||('R.O - '+(a.tipo||'Registro')))}</b><small>${escapeHtml(formatDateTime(a.created_at))}</small></div><span>+3</span></div>`).join(''):history.length?history.map(r=>`<div class="personal-history-item"><div><b>Serviço registrado</b><small>${escapeHtml(formatDateTime(r.entrada))}</small></div><span>+${Number(r.horas||0).toFixed(1)}</span></div>`).join(''):'<div class="personal-empty">Nenhum registro recente.</div>'}
+            </div>
+          </section>
+
+          <section class="personal-panel courses-panel">
+            <div class="personal-panel-head"><div><span class="eyebrow">FORMAÇÃO</span><h2>Cursos e conduta</h2></div></div>
+            ${courses.length?courses.map(c=>`<div class="course-item"><div class="course-check">✓</div><div><b>${escapeHtml(c.nome)}</b><small>${escapeHtml(c.descricao||'Curso GTM')}</small></div></div>`).join(''):'<div class="course-item course-empty-item"><div class="course-check">✓</div><div><b>Nenhum curso registrado</b><small>Suas certificações aparecerão aqui.</small></div></div>'}
+            <div class="course-stat"><span>Advertências</span><b>${Number(d.warnings||0)}</b></div>
+            <div class="course-stat"><span>Cursos instruídos</span><b>${Number(d.coursesTaught||0)}</b></div>
+          </section>
+        </div>
+
+        <div class="personal-two-columns bottom-personal">
+          <section class="personal-panel info-panel">
+            <div class="personal-panel-head"><div><span class="eyebrow">DADOS DO OFICIAL</span><h2>Informações pessoais</h2></div><button class="btn secondary" onclick="alert('A edição de dados será disponibilizada pelo Comando.')">Editar informações</button></div>
+            <div class="personal-info-grid">
+              ${personalInfo('NOME',u.nome||'—')}
+              ${personalInfo('PASSAPORTE',u.matricula||'—')}
+              ${personalInfo('TELEFONE',u.telefone_cidade||'—')}
+              ${personalInfo('PATENTE',u.patente||'—')}
+            </div>
+          </section>
+          <section class="personal-panel security-panel">
+            <div class="personal-panel-head"><div><span class="eyebrow">CONTA</span><h2>Segurança da conta</h2></div></div>
+            <p>Último acesso: <b>${escapeHtml(u.ultimo_acesso?formatDateTime(u.ultimo_acesso):'—')}</b></p>
+            <p>Última troca de senha: <b>Não registrada</b></p>
+            <div class="security-actions"><button class="service-button" onclick="alert('A troca de senha será disponibilizada na próxima etapa.')">Trocar senha</button><button class="btn secondary" onclick="alert('Todas as sessões ativas serão encerradas na próxima etapa.')">Encerrar todas as sessões</button></div>
+          </section>
+        </div>
+      </div>`;
+  }catch(e){ page.innerHTML=`<div class="section"><h3>Não foi possível carregar seu perfil</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`; }
+}
+function personalKpi(value,label){return `<div class="personal-kpi"><b>${escapeHtml(value)}</b><small>${escapeHtml(label)}</small></div>`}
+function personalProgress(label,value,max,text){return `<div class="personal-progress"><div><span>${escapeHtml(label)}</span><b>${escapeHtml(text)}</b></div><div class="progress-track"><i style="width:${Math.min(100,Math.max(0,(Number(value)||0)/max*100))}%"></i></div></div>`}
+function attendanceKpi(value,label){return `<div class="attendance-kpi"><b>${value}</b><small>${escapeHtml(label)}</small></div>`}
+function personalInfo(label,value){return `<div class="personal-info-box"><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></div>`}
+function changePersonalAvatar(input){const f=input.files?.[0];if(!f)return;if(f.size>3*1024*1024){alert('A imagem deve ter no máximo 3 MB.');input.value='';return;}const r=new FileReader();r.onload=()=>{localStorage.setItem('gtm_avatar',r.result);const el=document.getElementById('personal-avatar');if(el)el.innerHTML=`<img src="${r.result}" alt="Foto do perfil">`;};r.readAsDataURL(f)}
+function removePersonalAvatar(){localStorage.removeItem('gtm_avatar');const el=document.getElementById('personal-avatar');if(el){const n=(currentUser?.nome||'GTM').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase();el.innerHTML=`<span>${escapeHtml(n)}</span>`;}}
 
 async function efetivoPage(){
   try{
