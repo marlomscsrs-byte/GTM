@@ -22,6 +22,12 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefone_cidade VARCHAR(30);
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS matricula VARCHAR(30);
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS status_cadastro VARCHAR(20) NOT NULL DEFAULT 'pendente';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_matricula ON usuarios(matricula) WHERE matricula IS NOT NULL;
+-- Migração de cadastros antigos: contas não aprovadas e inativas voltam a aparecer como pendentes.
+UPDATE usuarios
+SET status_cadastro='pendente'
+WHERE COALESCE(aprovado,false)=false
+  AND COALESCE(ativo,false)=false
+  AND LOWER(COALESCE(status_cadastro,'pendente')) NOT IN ('recusado','reprovado');
 -- Migração segura de contas antigas já aprovadas.
 UPDATE usuarios SET status_cadastro='aprovado' WHERE aprovado=true AND ativo=true AND status_cadastro='pendente';
 

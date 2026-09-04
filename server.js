@@ -414,7 +414,9 @@ app.get("/api/admin/cadastros-pendentes", auth, requireAdmin, async (_, res) => 
   const { rows } = await pool.query(
     `SELECT id, nome, matricula, patente, telefone_cidade, username, created_at
      FROM usuarios
-     WHERE status_cadastro='pendente'
+     WHERE COALESCE(aprovado,false)=false
+       AND COALESCE(ativo,false)=false
+       AND LOWER(COALESCE(status_cadastro,'pendente')) NOT IN ('recusado','reprovado')
      ORDER BY created_at ASC`
   );
   res.json(rows);
@@ -440,7 +442,8 @@ app.post("/api/admin/cadastros/:id/aprovar", auth, requireAdmin, async (req, res
     );
     const user = userResult.rows[0];
     if (!user) { await client.query("ROLLBACK"); return res.status(404).json({ error: "Cadastro não encontrado." }); }
-    if (user.status_cadastro !== 'pendente') { await client.query("ROLLBACK"); return res.status(409).json({ error: "Este cadastro já foi processado." }); }
+    const cadastroPendente = !user.status_cadastro || ['pendente','pending','aguardando'].includes(String(user.status_cadastro).trim().toLowerCase());
+    if (user.aprovado === true || user.ativo === true || !cadastroPendente) { await client.query("ROLLBACK"); return res.status(409).json({ error: "Este cadastro já foi processado." }); }
 
     const duplicate = await client.query("SELECT id FROM efetivo WHERE matricula=$1", [user.matricula]);
     if (duplicate.rows[0]) {
