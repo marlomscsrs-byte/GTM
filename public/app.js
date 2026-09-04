@@ -530,8 +530,13 @@ function efetivoGrupo(grupo, rows){
     </tbody></table></div></div>`;
 }
 
+function isCommandUser(){
+  const role=String(currentUser?.role||'').trim().toLowerCase();
+  return role==='admin'||role==='comando';
+}
+
 async function adminPage(){
-  if(currentUser?.role !== 'admin'){
+  if(!isCommandUser()){
     page.innerHTML=`<div class="section"><h3>ACESSO RESTRITO</h3><p style="color:#718395;font-size:11px">Somente o comando pode administrar contas e usuários.</p></div>`;
     return;
   }
@@ -1003,7 +1008,7 @@ async function submitQRU(){
 async function registrosPage(){
   try{
     const rows=await api('/api/registros');
-    const canEdit=currentUser?.role==='admin';
+    const canEdit=isCommandUser();
     page.innerHTML=`
       <div class="page-head">
         <div><span class="eyebrow">HISTÓRICO OPERACIONAL</span><h1>Histórico de Registros</h1><p>QRUs e Ações registradas no Portal GTM</p></div>
@@ -1044,7 +1049,7 @@ function renderRecordRows(rows,canEdit){
 }
 function filterRecords(filter,btn){window.__gtmRecordFilter=filter;document.querySelectorAll('.record-filter').forEach(b=>b.classList.remove('active'));btn?.classList.add('active');applyRecordFilters();}
 function filterRecordsText(value){window.__gtmRecordSearch=value||'';applyRecordFilters();}
-function applyRecordFilters(){const rows=window.__gtmRecords||[];const filter=window.__gtmRecordFilter||'todos';const q=(window.__gtmRecordSearch||'').toLowerCase();const filtered=rows.filter(r=>(filter==='todos'||r.registro_tipo===filter)&&(!q||[r.protocolo,r.titulo,r.tipo,r.autor,r.local,r.resultado].filter(Boolean).join(' ').toLowerCase().includes(q)));const body=document.getElementById('records-body');if(body)body.innerHTML=renderRecordRows(filtered,currentUser?.role==='admin');}
+function applyRecordFilters(){const rows=window.__gtmRecords||[];const filter=window.__gtmRecordFilter||'todos';const q=(window.__gtmRecordSearch||'').toLowerCase();const filtered=rows.filter(r=>(filter==='todos'||r.registro_tipo===filter)&&(!q||[r.protocolo,r.titulo,r.tipo,r.autor,r.local,r.resultado].filter(Boolean).join(' ').toLowerCase().includes(q)));const body=document.getElementById('records-body');if(body)body.innerHTML=renderRecordRows(filtered,isCommandUser());}
 
 async function viewRecord(tipo,id){
   try{
@@ -1052,12 +1057,12 @@ async function viewRecord(tipo,id){
     const details=tipo==='QRU'?[
       ['Código',r.protocolo],['Tipo',r.tipo],['Título',r.titulo],['Local',r.local],['Status',r.status],['Autor',r.autor],['Data',formatDateTime(r.created_at)]
     ]:[['Código',`ACAO-${String(r.id).padStart(5,'0')}`],['Tipo',r.tipo],['Resultado',r.resultado],['Título',r.titulo],['Autor',r.autor],['Data',formatDateTime(r.created_at)]];
-    document.getElementById('record-view-modal')?.remove();document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="record-view-modal"><div class="modal-card record-modal-card"><button class="modal-close" onclick="document.getElementById('record-view-modal').remove()">×</button><span class="eyebrow">${escapeHtml(tipo)}</span><h2>${escapeHtml(r.titulo||'Registro')}</h2><div class="record-detail-grid">${details.map(([a,b])=>`<div><small>${escapeHtml(a)}</small><b>${escapeHtml(b??'—')}</b></div>`).join('')}</div><div class="record-detail-report"><small>${tipo==='QRU'?'RELATO':'DESCRIÇÃO / OBSERVAÇÕES'}</small><pre>${escapeHtml(tipo==='QRU'?(r.descricao||'—'):(r.descricao||'—'))}</pre></div>${r.foto_url?`<div class="record-photo"><img src="${escapeAttr(r.foto_url)}" alt="Imagem do registro"></div>`:''}<div class="record-modal-actions"><button class="btn secondary" onclick="document.getElementById('record-view-modal').remove()">Fechar</button>${currentUser?.role==='admin'?`<button class="btn" onclick="document.getElementById('record-view-modal').remove();editRecord('${tipo}',${Number(r.id)})">Editar</button>`:''}</div></div></div>`);
+    document.getElementById('record-view-modal')?.remove();document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="record-view-modal"><div class="modal-card record-modal-card"><button class="modal-close" onclick="document.getElementById('record-view-modal').remove()">×</button><span class="eyebrow">${escapeHtml(tipo)}</span><h2>${escapeHtml(r.titulo||'Registro')}</h2><div class="record-detail-grid">${details.map(([a,b])=>`<div><small>${escapeHtml(a)}</small><b>${escapeHtml(b??'—')}</b></div>`).join('')}</div><div class="record-detail-report"><small>${tipo==='QRU'?'RELATO':'DESCRIÇÃO / OBSERVAÇÕES'}</small><pre>${escapeHtml(tipo==='QRU'?(r.descricao||'—'):(r.descricao||'—'))}</pre></div>${r.foto_url?`<div class="record-photo"><img src="${escapeAttr(r.foto_url)}" alt="Imagem do registro"></div>`:''}<div class="record-modal-actions"><button class="btn secondary" onclick="document.getElementById('record-view-modal').remove()">Fechar</button>${isCommandUser()?`<button class="btn" onclick="document.getElementById('record-view-modal').remove();editRecord('${tipo}',${Number(r.id)})">Editar</button>`:''}</div></div></div>`);
   }catch(e){alert(e.message);}
 }
 
 async function editRecord(tipo,id){
-  if(currentUser?.role!=='admin'){alert('Acesso restrito ao Comando/Admin.');return;}
+  if(!isCommandUser()){alert('Acesso restrito ao Comando/Admin.');return;}
   try{
     const r=await api(`/api/registros/${tipo}/${id}`); document.getElementById('record-edit-modal')?.remove();
     const isQ=tipo==='QRU';
@@ -1070,7 +1075,7 @@ async function editRecord(tipo,id){
   }catch(e){alert(e.message);}
 }
 async function saveRecordEdit(event,tipo,id){event.preventDefault();const body={tipo:document.getElementById('edit-record-tipo')?.value.trim(),titulo:document.getElementById('edit-record-titulo')?.value.trim(),descricao:document.getElementById('edit-record-descricao')?.value||''};if(tipo==='QRU'){body.local=document.getElementById('edit-record-local')?.value.trim()||'Villa';body.status=document.getElementById('edit-record-status')?.value||'Aberta';}else body.resultado=document.getElementById('edit-record-resultado')?.value||'Vitória';try{const d=await api(`/api/admin/registros/${tipo}/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});alert(d.message||'Registro atualizado.');document.getElementById('record-edit-modal')?.remove();await registrosPage();}catch(e){document.getElementById('record-edit-error').textContent=e.message;}}
-async function deleteRecord(tipo,id){if(currentUser?.role!=='admin'){alert('Acesso restrito ao Comando/Admin.');return;}if(!confirm('Excluir este registro? Esta ação não pode ser desfeita.'))return;try{const d=await api(`/api/admin/registros/${tipo}/${id}`,{method:'DELETE'});alert(d.message||'Registro excluído.');await registrosPage();}catch(e){alert(e.message);}}
+async function deleteRecord(tipo,id){if(!isCommandUser()){alert('Acesso restrito ao Comando/Admin.');return;}if(!confirm('Excluir este registro? Esta ação não pode ser desfeita.'))return;try{const d=await api(`/api/admin/registros/${tipo}/${id}`,{method:'DELETE'});alert(d.message||'Registro excluído.');await registrosPage();}catch(e){alert(e.message);}}
 
 function escapeHtml(value){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function escapeAttr(value){return escapeHtml(value).replace(/`/g,'&#96;');}

@@ -36,11 +36,23 @@ function auth(req, res, next) {
   }
 }
 
-function requireAdmin(req, res, next) {
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ error: "Acesso restrito ao comando." });
+async function requireAdmin(req, res, next) {
+  try {
+    // Valida a permissão diretamente no banco para evitar falhas por token antigo.
+    const { rows } = await pool.query(
+      `SELECT role FROM usuarios WHERE id=$1 AND ativo=true AND aprovado=true LIMIT 1`,
+      [req.user?.id]
+    );
+    const role = String(rows[0]?.role || req.user?.role || '').trim().toLowerCase();
+    if (!['admin', 'comando'].includes(role)) {
+      return res.status(403).json({ error: "Acesso restrito ao Comando/Admin." });
+    }
+    req.user.role = role;
+    next();
+  } catch (error) {
+    console.error('Falha ao validar permissão administrativa:', error);
+    return res.status(500).json({ error: "Não foi possível validar a permissão administrativa." });
   }
-  next();
 }
 
 app.get("/api/health", async (_, res) => {
