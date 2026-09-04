@@ -532,13 +532,25 @@ function efetivoGrupo(grupo, rows){
 
 function isCommandUser(){
   const role=String(currentUser?.role||'').trim().toLowerCase();
-  return role==='admin'||role==='comando';
+  return ['admin','comando'].includes(role);
+}
+
+async function refreshCurrentUser(){
+  const data=await api('/api/auth/me');
+  if(data?.user){
+    currentUser={...currentUser,...data.user};
+    localStorage.setItem('gtm_user',JSON.stringify(currentUser));
+  }
+  return currentUser;
 }
 
 async function adminPage(){
-  // A autorização real é feita pelo backend consultando o PostgreSQL.
-  // Não bloquear pela cópia do usuário armazenada no localStorage, pois ela pode estar desatualizada.
   try{
+    await refreshCurrentUser();
+    if(!isCommandUser()){
+      page.innerHTML=`<div class="section"><h3>ACESSO RESTRITO</h3><p style="color:#718395;font-size:11px">Somente o Comando/Admin pode administrar contas e usuários.</p></div>`;
+      return;
+    }
     const [pending, rows]=await Promise.all([
       api('/api/admin/cadastros-pendentes'),
       api('/api/admin/usuarios')

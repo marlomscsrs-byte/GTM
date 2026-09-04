@@ -38,12 +38,19 @@ function auth(req, res, next) {
 
 async function requireAdmin(req, res, next) {
   try {
-    // Valida a permissão diretamente no banco para evitar falhas por token antigo.
+    // Primeiro usa o papel presente no token para não quebrar sessões antigas.
+    const tokenRole = String(req.user?.role || '').trim().toLowerCase();
+    if (['admin', 'comando'].includes(tokenRole)) {
+      req.user.role = tokenRole;
+      return next();
+    }
+
+    // Para os demais casos, confirma o papel diretamente no PostgreSQL.
     const { rows } = await pool.query(
       `SELECT role FROM usuarios WHERE id=$1 AND ativo=true AND aprovado=true LIMIT 1`,
       [req.user?.id]
     );
-    const role = String(rows[0]?.role || req.user?.role || '').trim().toLowerCase();
+    const role = String(rows[0]?.role || '').trim().toLowerCase();
     if (!['admin', 'comando'].includes(role)) {
       return res.status(403).json({ error: "Acesso restrito ao Comando/Admin." });
     }
@@ -200,6 +207,23 @@ app.post("/api/auth/login", async (req, res) => {
       role: user.role
     }
   });
+});
+
+app.get("/api/auth/me", auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, username, nome, matricula, patente, email, telefone_cidade, role, ativo, aprovado, status_cadastro
+       FROM usuarios WHERE id=$1 LIMIT 1`,
+      [req.user.id]
+    );
+    const user = rows[0];
+    if (!user) return res.status(404).json({ error: "Usuário não encontrado." });
+    if (!user.ativo || !user.aprovado) return res.status(403).json({ error: "Conta sem acesso ao portal." });
+    res.json({ user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Não foi possível carregar os dados da conta." });
+  }
 });
 
 app.get("/api/ponto/status", auth, async (req, res) => {
