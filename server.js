@@ -182,11 +182,131 @@ app.post("/api/auth/login", async (req, res) => {
       id: user.id,
       username: user.username,
       nome: user.nome,
+      matricula: user.matricula,
       patente: user.patente,
       telefone_cidade: user.telefone_cidade,
       role: user.role
     }
   });
+});
+
+app.get("/api/ponto/status", auth, async (req, res) => {
+  try {
+    const [current, week, total, team] = await Promise.all([
+      pool.query(`
+        SELECT ps.id, ps.entrada, ps.saida, ps.status, e.nome, e.matricula, e.patente
+        FROM pontos_servico ps
+        JOIN efetivo e ON e.id = ps.efetivo_id
+        WHERE ps.usuario_id=$1 AND ps.status='em_servico'
+        ORDER BY ps.entrada DESC LIMIT 1`, [req.user.id]),
+      pool.query(`
+        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(saida, now()) - entrada))/3600.0),0) AS horas
+        FROM pontos_servico
+        WHERE usuario_id=$1 AND entrada >= date_trunc('week', now())`, [req.user.id]),
+      pool.query(`
+        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(saida, now()) - entrada))/3600.0),0) AS horas
+        FROM pontos_servico
+        WHERE usuario_id=$1`, [req.user.id]),
+      pool.query(`
+        SELECT ps.id, e.nome, e.matricula, e.patente, ps.entrada
+        FROM pontos_servico ps
+        JOIN efetivo e ON e.id=ps.efetivo_id
+        WHERE ps.status='em_servico'
+        ORDER BY ps.entrada ASC`)
+    ]);
+    const weekHours = Number(week.rows[0].horas || 0);
+    const totalHours = Number(total.rows[0].horas || 0);
+    res.json({
+      current: current.rows[0] || null,
+      week: { hours: weekHours, points: Number(weekHours.toFixed(1)) },
+      total: { hours: totalHours, points: Number(totalHours.toFixed(1)) },
+      team: team.rows
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Não foi possível consultar o ponto de serviço." });
+  }
+});
+
+app.post("/api/ponto/iniciar", auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const linked = await client.query(`
+      SELECT id, nome, matricula, patente FROM efetivo
+      WHERE usuario_id=$1 AND ativo=true LIMIT 1`, [req.user.id]);
+    if (!linked.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Seu cadastro ainda não está vinculado a um integrante ativo do efetivo." });
+    }
+    const active = await client.query(`
+      SELECT id, entrada FROM pontos_servico
+      WHERE usuario_id=$1 AND status='em_servico' LIMIT 1`, [req.user.id]);
+    if (active.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Você já está em serviço." });
+    }
+    const result = await client.query(`
+      INSERT INTO pontos_servico (usuario_id, efetivo_id, entrada, status)
+      VALUES ($1,$2,now(),'em_servico')
+      RETURNING id, entrada, status`, [req.user.id, linked.rows[0].id]);
+    await client.query(`
+      INSERT INTO logs (usuario_id, acao, entidade, entidade_id, detalhes)
+      VALUES ($1,'INICIAR_SERVICO','pontos_servico',$2,$3)`,
+      [req.user.id, result.rows[0].id, JSON.stringify({ efetivo_id: linked.rows[0].id })]);
+    await client.query("COMMIT");
+    res.status(201).json({ ok: true, message: "Serviço iniciado.", service: result.rows[0] });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error(error);
+    res.status(500).json({ error: "Não foi possível iniciar o serviço." });
+  } finally { client.release(); }
+});
+
+app.post("/api/ponto/encerrar", auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const current = await client.query(`
+      SELECT id, entrada FROM pontos_servico
+      WHERE usuario_id=$1 AND status='em_servico'
+      ORDER BY entrada DESC LIMIT 1 FOR UPDATE`, [req.user.id]);
+    if (!current.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Você não está em serviço." });
+    }
+    const result = await client.query(`
+      UPDATE pontos_servico
+      SET saida=now(), status='encerrado'
+      WHERE id=$1
+      RETURNING id, entrada, saida, status,
+        EXTRACT(EPOCH FROM (saida-entrada))/3600.0 AS horas`, [current.rows[0].id]);
+    await client.query(`
+      INSERT INTO logs (usuario_id, acao, entidade, entidade_id, detalhes)
+      VALUES ($1,'ENCERRAR_SERVICO','pontos_servico',$2,$3)`,
+      [req.user.id, result.rows[0].id, JSON.stringify({ horas: Number(result.rows[0].horas || 0) })]);
+    await client.query("COMMIT");
+    res.json({ ok: true, message: "Serviço encerrado.", service: result.rows[0] });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error(error);
+    res.status(500).json({ error: "Não foi possível encerrar o serviço." });
+  } finally { client.release(); }
+});
+
+app.get("/api/ponto/historico", auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT id, entrada, saida, status,
+        ROUND((EXTRACT(EPOCH FROM (COALESCE(saida, now())-entrada))/3600.0)::numeric,2) AS horas,
+        ROUND((EXTRACT(EPOCH FROM (COALESCE(saida, now())-entrada))/3600.0)::numeric,1) AS pontos
+      FROM pontos_servico WHERE usuario_id=$1
+      ORDER BY entrada DESC LIMIT 100`, [req.user.id]);
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Não foi possível carregar o histórico de serviço." });
+  }
 });
 
 app.get("/api/dashboard", auth, async (_, res) => {

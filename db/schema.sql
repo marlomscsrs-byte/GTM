@@ -136,3 +136,19 @@ CREATE INDEX IF NOT EXISTS idx_logs_created ON logs(created_at);
 
 -- O efetivo começa vazio. Um autocadastro fica pendente e só entra no efetivo
 -- depois da aprovação do Comando. A aprovação cria e vincula o registro automaticamente.
+
+
+CREATE TABLE IF NOT EXISTS pontos_servico (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  efetivo_id UUID NOT NULL REFERENCES efetivo(id) ON DELETE CASCADE,
+  entrada TIMESTAMPTZ NOT NULL DEFAULT now(),
+  saida TIMESTAMPTZ,
+  status VARCHAR(20) NOT NULL DEFAULT 'em_servico',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pontos_servico_usuario ON pontos_servico(usuario_id, entrada DESC);
+CREATE INDEX IF NOT EXISTS idx_pontos_servico_status ON pontos_servico(status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pontos_servico_um_ativo_por_usuario
+  ON pontos_servico(usuario_id) WHERE status='em_servico';

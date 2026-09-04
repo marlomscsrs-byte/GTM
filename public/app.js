@@ -117,6 +117,7 @@ async function loadPage(name){
   };
   const [title,sub]=titles[name]||titles.dashboard;
   if(name==="dashboard") return dashboard();
+  if(name==="escala") return servicePage();
   if(name==="efetivo") return efetivoPage();
   if(name==="ocorrencias") return tablePage(title,sub,"/api/ocorrencias",["protocolo","tipo","titulo","local","status"]);
   if(name==="admin") return adminPage();
@@ -128,25 +129,31 @@ async function loadPage(name){
 async function dashboard(){
   try{
     const d=await api("/api/dashboard");
+    const p=await api("/api/ponto/status");
     const s=d.stats||{};
     const nome=escapeHtml(currentUser?.nome||"Operador");
     const patente=escapeHtml(currentUser?.patente||"Integrante GTM");
     const role=currentUser?.role === 'admin' ? 'Comando' : 'Operador';
+    const active=!!p.current;
+    const weekHours=Number(p.week?.hours||0);
+    const totalHours=Number(p.total?.hours||0);
+    const team=p.team||[];
     page.innerHTML=`
-      <div class="dashboard-hero">
+      <div class="dashboard-hero ${active?'on-duty':''}">
         <div class="hero-copy">
           <span class="over">CENTRAL OPERACIONAL</span>
           <h1>Bom dia, ${nome}!</h1>
           <p>“Toda missão bem executada começa com uma boa preparação.”</p>
           <small>${patente} • painel pessoal</small>
+          <div class="duty-status ${active?'duty-on':'duty-off'}"><span>●</span>${active?`Em serviço desde ${formatTime(p.current.entrada)}`:'Fora de serviço'}</div>
         </div>
         <div class="hero-metrics">
-          ${heroMetric(s.ocorrencias||0,'OCORRÊNCIAS','7 dias')}
-          ${heroMetric(s.servicos||0,'SERVIÇOS','Hoje')}
-          ${heroMetric(s.efetivo||0,'EFETIVO','Ativos')}
-          ${heroMetric(s.motocicletas||0,'MOTOS','Disponíveis')}
+          ${heroMetric(p.week?.points?.toFixed?.(1)||'0.0','PONTOS DA SEMANA','1 ponto / hora')}
+          ${heroMetric(formatHours(weekHours),'HORAS DA SEMANA','serviço registrado')}
+          ${heroMetric(p.total?.points?.toFixed?.(1)||'0.0','PONTOS TOTAIS','1 ponto / hora')}
+          ${heroMetric(formatHours(totalHours),'HORAS TOTAIS','histórico')}
         </div>
-        <button class="service-button" onclick="loadPage('escala')">↪ Iniciar serviço</button>
+        <button class="service-button ${active?'service-stop':''}" onclick="toggleService()">${active?'↪ Encerrar serviço':'↪ Iniciar serviço'}</button>
       </div>
 
       <div class="dashboard-grid">
@@ -156,7 +163,7 @@ async function dashboard(){
             ${dashboardAction('▤','Nova QRU','Registrar ocorrência','ocorrencias')}
             ${dashboardAction('⚔','Nova ação','Adicionar atividade','acoes')}
             ${dashboardAction('♜','Ranking','Ver classificação','relatorios')}
-            ${dashboardAction('▥','Setor pessoal','Solicitações','pessoal')}
+            ${dashboardAction('◷','Meu serviço','Bater ponto e histórico','escala')}
             ${dashboardAction('⚑','Avisos','Comunicados da unidade','comunicados')}
             ${dashboardAction('♙','Hierarquia','Estrutura da unidade','efetivo')}
           </div>
@@ -166,27 +173,69 @@ async function dashboard(){
           <div class="panel-heading"><div><span class="eyebrow">DESTAQUE</span><h2>Resumo operacional</h2></div></div>
           ${rankRow('01','Efetivo ativo',s.efetivo||0,'integrantes')}
           ${rankRow('02','Ocorrências',s.ocorrencias||0,'últimos 7 dias')}
-          ${rankRow('03','Serviços hoje',s.servicos||0,'programados')}
+          ${rankRow('03','Serviços hoje',s.servicos||0,'registros')}
           ${rankRow('04','Cursos ativos',s.cursos||0,'treinamentos')}
-          ${rankRow('05','Usuários online',s.online||0,'agora')}
+          ${rankRow('05','Em serviço',team.length,'agora')}
         </aside>
 
         <section class="status-panel">
-          <div class="panel-heading"><div><span class="eyebrow">STATUS OPERACIONAL</span><h2>Equipe em serviço</h2></div><span class="live-dot">● ONLINE</span></div>
-          <div class="service-empty"><div class="service-icon">◉</div><div><b>${s.servicos||0} serviço(s) programado(s) hoje</b><small>Consulte a escala para visualizar a equipe e iniciar seu serviço.</small></div><button class="outline-btn" onclick="loadPage('escala')">Ver escala</button></div>
+          <div class="panel-heading"><div><span class="eyebrow">STATUS OPERACIONAL</span><h2>Equipe em serviço</h2></div><span class="live-dot">● ${team.length?'ATIVA':'AGUARDANDO'}</span></div>
+          ${team.length?team.slice(0,6).map((m,i)=>`<div class="team-service-row"><div class="team-avatar">${escapeHtml((m.nome||'?').charAt(0).toUpperCase())}</div><div><b>${escapeHtml(m.nome)}</b><small>${escapeHtml(m.patente||'Integrante')} • ID ${escapeHtml(m.matricula||'—')}</small></div><span>Desde ${formatTime(m.entrada)}</span></div>`).join(''):`<div class="service-empty"><div class="service-icon">◉</div><div><b>Nenhum integrante em serviço</b><small>Inicie seu serviço pelo botão acima quando estiver de plantão.</small></div><button class="outline-btn" onclick="toggleService()">${active?'Encerrar':'Iniciar serviço'}</button></div>`}
         </section>
 
         <section class="profile-panel">
           <div class="panel-heading"><div><span class="eyebrow">MEU PERFIL</span><h2>Acesso atual</h2></div></div>
           <div class="profile-summary"><div class="profile-badge">${escapeHtml((currentUser?.nome||'O').charAt(0).toUpperCase())}</div><div><b>${nome}</b><small>${patente}</small></div></div>
           <div class="profile-rows">
-            <div><span>Usuário</span><b>${escapeHtml(currentUser?.username||'-')}</b></div>
+            <div><span>ID</span><b>${escapeHtml(currentUser?.matricula||'—')}</b></div>
             <div><span>Perfil</span><b>${role}</b></div>
             <div><span>Sessão</span><b class="online-text">● Ativa</b></div>
           </div>
         </section>
       </div>`;
   }catch(e){ page.innerHTML=`<div class="section"><h3>Banco de dados indisponível</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`}
+}
+
+async function toggleService(){
+  try{
+    const status=await api('/api/ponto/status');
+    const endpoint=status.current?'/api/ponto/encerrar':'/api/ponto/iniciar';
+    const data=await api(endpoint,{method:'POST',headers:{'Content-Type':'application/json'}});
+    alert(data.message||'Operação concluída.');
+    await dashboard();
+  }catch(e){ alert(e.message); }
+}
+
+async function servicePage(){
+  try{
+    const p=await api('/api/ponto/status');
+    const h=await api('/api/ponto/historico');
+    const active=!!p.current;
+    page.innerHTML=`
+      <div class="page-head"><div><h1>Meu serviço</h1><p>Bater ponto, acompanhar o serviço atual e consultar o histórico.</p></div><button class="btn ${active?'btn-danger':''}" onclick="toggleService()">${active?'Encerrar serviço':'Iniciar serviço'}</button></div>
+      <div class="service-overview">
+        <div class="service-card ${active?'current-on':''}"><span class="eyebrow">STATUS ATUAL</span><strong>${active?'EM SERVIÇO':'FORA DE SERVIÇO'}</strong><small>${active?`Entrada às ${formatTime(p.current.entrada)} • ${formatDurationFrom(p.current.entrada)}`:'Nenhum ponto em aberto.'}</small></div>
+        <div class="service-card"><span class="eyebrow">SEMANA</span><strong>${formatHours(p.week?.hours||0)}</strong><small>${Number(p.week?.points||0).toFixed(1)} pontos</small></div>
+        <div class="service-card"><span class="eyebrow">TOTAL</span><strong>${formatHours(p.total?.hours||0)}</strong><small>${Number(p.total?.points||0).toFixed(1)} pontos</small></div>
+      </div>
+      <section class="section"><div class="section-title-row"><div><h3>Histórico de serviço</h3><p class="section-sub">Cada hora registrada vale 1 ponto para os indicadores de desempenho.</p></div></div>
+      <div class="table-wrap"><table class="table"><thead><tr><th>ENTRADA</th><th>SAÍDA</th><th>DURAÇÃO</th><th>PONTOS</th><th>STATUS</th></tr></thead><tbody>
+      ${h.map(r=>`<tr><td>${formatDateTime(r.entrada)}</td><td>${r.saida?formatDateTime(r.saida):'—'}</td><td>${formatHours(Number(r.horas||0))}</td><td>${Number(r.pontos||0).toFixed(1)}</td><td><span class="status ${r.status==='em_servico'?'status-active':'status-inactive'}">${r.status==='em_servico'?'EM SERVIÇO':'ENCERRADO'}</span></td></tr>`).join('')||`<tr><td colspan="5">Nenhum serviço registrado.</td></tr>`}
+      </tbody></table></div></section>`;
+  }catch(e){ page.innerHTML=`<div class="section"><h3>Não foi possível carregar o ponto</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`; }
+}
+
+function formatHours(hours){
+  const h=Math.max(0,Number(hours)||0);
+  const whole=Math.floor(h), mins=Math.round((h-whole)*60);
+  if(mins===60) return `${whole+1}h 00m`;
+  return `${whole}h ${String(mins).padStart(2,'0')}m`;
+}
+function formatTime(value){return value?new Date(value).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';}
+function formatDateTime(value){return value?new Date(value).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';}
+function formatDurationFrom(value){
+  const ms=Math.max(0,Date.now()-new Date(value).getTime());
+  return formatHours(ms/3600000);
 }
 
 function heroMetric(n,label,sub){return `<div class="hero-metric"><label>${label}</label><b>${n}</b><small>${sub}</small></div>`}
