@@ -311,6 +311,35 @@ app.get("/api/ponto/historico", auth, async (req, res) => {
   }
 });
 
+app.get("/api/dashboard/eventos", auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT e.id, e.titulo, e.descricao, e.data_evento, e.local,
+             COALESCE(ep.status, 'pendente') AS minha_participacao
+      FROM eventos e
+      LEFT JOIN evento_participantes ep ON ep.evento_id=e.id AND ep.usuario_id=$1
+      WHERE e.ativo=true AND e.data_evento >= now()
+      ORDER BY e.data_evento ASC LIMIT 6`, [req.user.id]);
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Não foi possível carregar os próximos eventos." });
+  }
+});
+
+app.post("/api/dashboard/eventos/:id/participar", auth, async (req, res) => {
+  try {
+    await pool.query(`
+      INSERT INTO evento_participantes (evento_id, usuario_id, status)
+      VALUES ($1,$2,'confirmado')
+      ON CONFLICT (evento_id, usuario_id) DO UPDATE SET status='confirmado'`, [req.params.id, req.user.id]);
+    res.json({ ok: true, message: "Participação confirmada." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Não foi possível confirmar sua participação." });
+  }
+});
+
 app.get("/api/dashboard", auth, async (_, res) => {
   const [efetivo, ocorrencias, servicos, cursos, motos, online] = await Promise.all([
     pool.query("SELECT count(*)::int AS n FROM efetivo WHERE ativo=true"),

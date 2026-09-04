@@ -122,6 +122,26 @@ CREATE TABLE IF NOT EXISTS comunicados (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+
+CREATE TABLE IF NOT EXISTS eventos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titulo VARCHAR(180) NOT NULL,
+  descricao TEXT,
+  data_evento TIMESTAMPTZ NOT NULL,
+  local VARCHAR(180),
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS evento_participantes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  evento_id UUID NOT NULL REFERENCES eventos(id) ON DELETE CASCADE,
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  status VARCHAR(30) NOT NULL DEFAULT 'pendente',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(evento_id, usuario_id)
+);
+
 CREATE TABLE IF NOT EXISTS logs (
   id BIGSERIAL PRIMARY KEY,
   usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,

@@ -128,10 +128,12 @@ async function loadPage(name){
 
 async function dashboard(){
   try{
-    const [d,p,statusRanking]=await Promise.all([
+    const [d,p,statusRanking,recentEvents,recentRecords]=await Promise.all([
       api("/api/dashboard"),
       api("/api/ponto/status"),
-      api("/api/ranking?period=week")
+      api("/api/ranking?period=week"),
+      api("/api/dashboard/eventos"),
+      api("/api/ocorrencias")
     ]);
     const s=d.stats||{};
     const nome=escapeHtml(currentUser?.nome||"Operador");
@@ -180,7 +182,20 @@ async function dashboard(){
           <div class="panel-heading"><div><span class="eyebrow">STATUS OPERACIONAL</span><h2>Equipe em serviço</h2></div><span class="live-dot">● ${team.length?'ATIVA':'AGUARDANDO'}</span></div>
           ${team.length?team.slice(0,6).map(m=>`<div class="team-service-row"><div class="team-avatar">${escapeHtml((m.nome||'?').charAt(0).toUpperCase())}</div><div><b>${escapeHtml(m.nome)}</b><small>${escapeHtml(m.patente||'Integrante')}</small></div><span><i></i> Em serviço<br><small>${formatTime(m.entrada)}</small></span></div>`).join(''):`<div class="service-empty"><div class="service-icon">◉</div><div><b>Nenhum integrante em serviço</b><small>Inicie seu serviço pelo botão acima quando estiver de plantão.</small></div><button class="outline-btn" onclick="toggleService()">${active?'Encerrar':'Iniciar serviço'}</button></div>`}
         </section>
-      </div>`;
+      </div>
+
+      <section class="dashboard-events-panel">
+        <div class="dashboard-section-heading"><div><h2>◷ Próximos eventos</h2><p>Confirme sua participação nos eventos da corporação</p></div></div>
+        ${Array.isArray(recentEvents) && recentEvents.length ? recentEvents.map(ev=>eventRow(ev)).join('') : '<div class="dashboard-empty-events">Nenhum evento próximo.</div>'}
+      </section>
+
+      <section class="dashboard-records-panel">
+        <div class="dashboard-section-heading"><div><h2>▤ Registros Recentes</h2></div></div>
+        <div class="records-table">
+          <div class="records-head"><span>CÓDIGO</span><span>TÍTULO</span><span>TIPO</span><span>DETALHES</span><span>PTS</span></div>
+          ${Array.isArray(recentRecords) && recentRecords.length ? recentRecords.slice(0,6).map(r=>recordRow(r)).join('') : '<div class="dashboard-empty-records">Nenhum registro recente.</div>'}
+        </div>
+      </section>`;
   }catch(e){ page.innerHTML=`<div class="section"><h3>Banco de dados indisponível</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`}
 }
 
@@ -279,6 +294,22 @@ function formatDurationFrom(value){
 
 function heroMetric(n,label,sub){return `<div class="hero-metric"><label>${label}</label><b>${n}</b><small>${sub}</small></div>`}
 function dashboardAction(icon,title,sub,target){return `<button class="dashboard-action" onclick="loadPage('${target}')"><div class="dash-icon">${icon}</div><strong>${title}</strong><small>${sub}</small></button>`}
+function eventRow(ev){
+  const date=new Date(ev.data_evento);
+  const when=date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' • '+date.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const confirmed=ev.minha_participacao==='confirmado';
+  return `<div class="dashboard-event-row"><div class="event-date"><b>${escapeHtml(when)}</b><small>${escapeHtml(ev.local||'Local não informado')}</small></div><div class="event-main"><b>${escapeHtml(ev.titulo)}</b><small>${escapeHtml(ev.descricao||'Evento da corporação')}</small></div><button class="event-confirm ${confirmed?'confirmed':''}" ${confirmed?'disabled':''} onclick="confirmEvent('${escapeHtml(ev.id)}',this)">${confirmed?'✓ Participação confirmada':'Confirmar participação'}</button></div>`;
+}
+
+async function confirmEvent(id,button){
+  try{ const data=await api('/api/dashboard/eventos/'+id+'/participar',{method:'POST'}); button.classList.add('confirmed'); button.disabled=true; button.textContent='✓ Participação confirmada'; }
+  catch(e){ alert(e.message); }
+}
+
+function recordRow(r){
+  return `<div class="record-row"><span class="record-code">${escapeHtml(r.protocolo||'—')}</span><strong>${escapeHtml(r.titulo||'R.O')}</strong><span><em>QRU</em></span><span class="record-detail">R.O</span><strong class="record-points">3</strong></div>`;
+}
+
 function rankRow(pos,title,value,sub){return `<div class="rank-row"><span class="rank-pos">${pos}</span><div><b>${title}</b><small>${sub}</small></div><strong>${value}</strong></div>`}
 
 function stat(n,label,sub){return `<div class="stat"><label>${label}</label><b>${n}</b><small>● ${sub}</small></div>`}
