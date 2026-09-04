@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: portal-gtm
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gtm-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: gtm-db
+    plan: free
+    databaseName: gtm
+    user: gtm

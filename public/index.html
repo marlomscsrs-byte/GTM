@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portal GTM</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="login" class="login">
+  <div class="login-brand"><img src="assets/GTM.png"><div><b>GTM</b><small>GRUPAMENTO TÁTICO<br>DE MOTOCICLETAS</small></div></div>
+  <section class="login-card">
+    <img class="login-logo" src="assets/GTM.png">
+    <span class="overline">CENTRAL OPERACIONAL</span>
+    <h1>Portal <i>GTM</i></h1>
+    <p>Gestão operacional integrada</p>
+    <form id="form">
+      <label>Usuário<input id="username" placeholder="Digite seu usuário" required></label>
+      <label>Senha<input id="password" type="password" placeholder="Digite sua senha" required></label>
+      <button>Entrar <span>→</span></button>
+      <div id="error"></div>
+    </form>
+    <small class="exclusive">Acesso exclusivo a membros aprovados</small>
+  </section>
+</div>
+
+<div id="app" class="app hidden">
+  <aside>
+    <div class="aside-brand"><img src="assets/GTM.png"><div><b>PORTAL GTM</b><small>Central operacional</small></div></div>
+    <nav id="nav">
+      <button class="active" data-page="dashboard">⌂<span>Visão geral<small>Painel geral</small></span></button>
+      <button data-page="ocorrencias">▣<span>Ocorrências<small>Registro e histórico</small></span></button>
+      <button data-page="efetivo">♙<span>Efetivo<small>Integrantes</small></span></button>
+      <button data-page="escala">◷<span>Escala<small>Serviços e plantões</small></span></button>
+      <button data-page="cursos">◆<span>Cursos<small>Treinamentos</small></span></button>
+      <button data-page="frota">♢<span>Frota<small>Motocicletas</small></span></button>
+      <button data-page="manual">☰<span>Manual<small>Procedimentos</small></span></button>
+      <button data-page="relatorios">▤<span>Relatórios<small>Estatísticas</small></span></button>
+      <button data-page="admin">⚙<span>Administração<small>Usuários e configuração</small></span></button>
+    </nav>
+    <div class="motto">“DISCIPLINA<br>TÉCNICA<br>VELOCIDADE<br>RESULTADO”<small>GTM • SEMPRE PRESENTE</small></div>
+    <button id="logout" class="logout">↪ Sair do Portal</button>
+  </aside>
+
+  <main>
+    <header>
+      <div class="header-title"><span>CENTRAL OPERACIONAL GTM</span></div>
+      <div class="search">⌕ &nbsp; Buscar no sistema...</div>
+      <div class="profile"><span>●</span><div><b id="name">Operador</b><small id="rank">Piloto</small></div><img src="assets/GTM.png"></div>
+    </header>
+    <section id="page"></section>
+  </main>
+</div>
+<script src="app.js"></script>
+
+<div id="setup-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="eyebrow">CONFIGURAÇÃO INICIAL</div>
+    <h2>Criar administrador do G.T.M.</h2>
+    <p class="muted">Este cadastro aparece somente na primeira configuração do portal.</p>
+    <form id="setup-form">
+      <input name="nome" placeholder="Nome completo" required />
+      <input name="username" placeholder="Usuário de acesso" required />
+      <input name="email" type="email" placeholder="E-mail (opcional)" />
+      <input name="patente" placeholder="Patente / função" value="Comando" />
+      <input name="password" type="password" placeholder="Senha (mínimo 8 caracteres)" minlength="8" required />
+      <button type="submit" class="primary">Criar administrador</button>
+      <div id="setup-error" class="form-error"></div>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>
