@@ -527,19 +527,21 @@ async function qruPage(){
         <div class="qru-type-grid">${QRU_TYPES.map((t,i)=>`<button type="button" class="qru-type ${i===0?'selected':''}" data-type="${escapeAttr(t)}" onclick="selectQRUType(this)">${escapeHtml(t)}</button>`).join('')}</div>
       </section>
       <section class="qru-section">
-        <div class="qru-section-title"><span>DADOS DA OCORRÊNCIA</span><small>Preencha os dados para montar o relato automaticamente.</small></div>
+        <div class="qru-section-title"><span>DADOS DA OCORRÊNCIA</span><small>Preencha os dados abaixo para montar o relato automaticamente.</small></div>
         <div class="qru-form-grid">
           <label>Modelo do veículo<input id="qru-veiculo" placeholder="Ex.: Supra"></label>
-          <label>Itens apreendidos<input id="qru-itens" placeholder="Ex.: Dinheiro sujo"></label>
+          <label>Itens apreendidos<input id="qru-itens" placeholder="Ex.: Dinheiro Sujo"></label>
           <label>Passaporte do indivíduo<input id="qru-passaporte" placeholder="Ex.: 3936"></label>
-          <label class="full">Observações<textarea id="qru-obs" rows="4" placeholder="Informações complementares da ocorrência..."></textarea></label>
-          <label class="full">Título do registro<input id="qru-titulo" placeholder="Selecione um tipo para preencher automaticamente"></label>
-          <label>Departamento/Unidade<input id="qru-departamento" value="1° Departamento de Polícia Militar - Villa (1° BPM - Villa)"></label>
         </div>
+      </section>
+      <section class="qru-section qru-report-section">
+        <div class="qru-section-title"><span>TÍTULO E RELATO</span><small>O título e o relato são preenchidos automaticamente conforme o tipo selecionado.</small></div>
+        <label class="qru-title-field">Título<input id="qru-titulo" placeholder="Selecione um tipo para preencher automaticamente"></label>
+        <label class="qru-report-field">Relato gerado automaticamente<textarea id="qru-preview" class="qru-preview" rows="14" readonly></textarea></label>
       </section>
       <section class="qru-section">
         <div class="qru-section-title"><span>FOTO DO QRU <em>(OPCIONAL)</em></span><small>PNG, JPG ou link</small></div>
-        <div class="qru-photo-row"><input id="qru-foto" placeholder="Cole o link da imagem (opcional)" onchange="photoUrl=this.value"><label class="qru-upload">↥ Upload<input type="file" accept="image/png,image/jpeg" onchange="previewQRUPhoto(this)"></label><button class="btn secondary" type="button" onclick="document.getElementById('qru-foto').value='';photoUrl=''">Limpar</button></div>
+        <div class="qru-photo-row"><input id="qru-foto" placeholder="Cole o link da imagem (opcional)" onchange="photoUrl=this.value"><label class="qru-upload">↥ Upload<input type="file" accept="image/png,image/jpeg" onchange="previewQRUPhoto(this)"></label><button class="btn secondary" type="button" onclick="document.getElementById('qru-foto').value='';photoUrl='';window.qruPhotoData=''">Limpar</button></div>
         <div id="qru-photo-preview" class="qru-photo-preview">Nenhuma imagem selecionada</div>
       </section>
       <section class="qru-section">
@@ -549,17 +551,11 @@ async function qruPage(){
         <div id="qru-officers" class="qru-officer-list">${renderQRUOfficers(officers, selected)}</div>
         <div class="qru-selected-count" id="qru-selected-count">0 oficial(is) selecionado(s)</div>
       </section>
-      <section class="qru-section qru-preview-section">
-        <div class="qru-section-title"><span>PRÉVIA DO RELATO</span><small>Confira o relato completo antes de registrar a QRU.</small></div>
-        <textarea id="qru-preview" class="qru-preview" rows=14></textarea>
-      </section>
       <div class="qru-bottom-actions"><button class="btn secondary" onclick="loadPage('dashboard')">Cancelar</button><button class="btn" onclick="submitQRU()">Registrar QRU</button></div>`;
     window.qruOfficers = officers; window.qruSelected = selected; window.qruPhotoUrl = photoUrl;
     document.getElementById('qru-veiculo').addEventListener('input', updateQRUPreview);
     document.getElementById('qru-itens').addEventListener('input', updateQRUPreview);
     document.getElementById('qru-passaporte').addEventListener('input', updateQRUPreview);
-    document.getElementById('qru-obs').addEventListener('input', updateQRUPreview);
-    document.getElementById('qru-departamento').addEventListener('input', updateQRUPreview);
     document.getElementById('qru-titulo').addEventListener('input', updateQRUPreview);
     selectQRUType(document.querySelector('.qru-type.selected'));
   }catch(e){ page.innerHTML=`<div class="section"><h3>Não foi possível carregar o formulário</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`; }
@@ -592,38 +588,34 @@ function previewQRUPhoto(input){
 }
 function buildQRUReport(){
   const type=selectedQRUType();
-  const departamento=document.getElementById('qru-departamento')?.value.trim()||'1° Departamento de Polícia Militar - Villa (1° BPM - Villa)';
   const itens=document.getElementById('qru-itens')?.value.trim()||'Nenhum item informado.';
   const veiculo=document.getElementById('qru-veiculo')?.value.trim()||'Não informado.';
   const passaporte=document.getElementById('qru-passaporte')?.value.trim()||'Não informado.';
-  const obs=document.getElementById('qru-obs')?.value.trim()||'O detido e os materiais apreendidos foram encaminhados à autoridade competente para a adoção das providências legais cabíveis. A ocorrência foi finalizada com êxito pelas equipes policiais.';
 
-  // Cada tipo de QRU possui seu próprio modelo. O tipo selecionado NUNCA
-  // deve exibir o texto de outra ocorrência.
-  const fugaDeAbordagem = `🎖️ ${departamento} 🎖️\n\n📋 Relato:\nApós o acionamento das equipes policiais para atendimento da ocorrência, foi iniciado acompanhamento tático ao veículo suspeito. Durante a intervenção, o indivíduo identificado pelo passaporte ${passaporte} desobedeceu às ordens legais de parada e empreendeu fuga utilizando um veículo modelo ${veiculo}, transitando por diferentes vias e expondo terceiros a risco.\n\nAs equipes mantiveram comunicação operacional contínua, realizaram o acompanhamento de forma coordenada e adotaram os procedimentos necessários para preservar a segurança da população e dos agentes envolvidos. Após o cerco e a contenção do veículo, a Polícia obteve êxito na abordagem e na prisão do indivíduo, encerrando a ocorrência sem novas intercorrências.\n\n🕵️ Detidos:\n• Passaporte: ${passaporte}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n🔍 Observações:\n${obs}`;
-
-  // Para os demais tipos, ainda não foi fornecido um texto oficial completo.
-  // Portanto o sistema identifica corretamente a QRU selecionada sem inventar
-  // um relato e sem reutilizar o modelo de Fuga de Abordagem.
-  const modeloPorTipo = {
-    'ATM/Registradora': `Atendimento de QRU de ATM/Registradora.\n\n📋 Relato:\nA ocorrência foi registrada como ATM/Registradora. Preencha os dados da ocorrência para complementar o registro.`,
-    'Venda de Droga': `Atendimento de QRU de Venda de Droga.\n\n📋 Relato:\nA ocorrência foi registrada como Venda de Droga. Preencha os dados da ocorrência para complementar o registro.`,
-    'Roubo de Veículo/Viatura': `Atendimento de QRU de Roubo de Veículo/Viatura.\n\n📋 Relato:\nA ocorrência foi registrada como Roubo de Veículo/Viatura. Preencha os dados da ocorrência para complementar o registro.`,
-    'Assalto a Mão Armada': `Atendimento de QRU de Assalto a Mão Armada.\n\n📋 Relato:\nA ocorrência foi registrada como Assalto a Mão Armada. Preencha os dados da ocorrência para complementar o registro.`,
-    'Sequestro': `Atendimento de QRU de Sequestro.\n\n📋 Relato:\nA ocorrência foi registrada como Sequestro. Preencha os dados da ocorrência para complementar o registro.`,
-    'Cod 5': `Atendimento de QRU de Cod 5.\n\n📋 Relato:\nA ocorrência foi registrada como Cod 5. Preencha os dados da ocorrência para complementar o registro.`,
-    'Invasão de Propriedade': `Atendimento de QRU de Invasão de Propriedade.\n\n📋 Relato:\nA ocorrência foi registrada como Invasão de Propriedade. Preencha os dados da ocorrência para complementar o registro.`,
-    'Porte Ilegal de Arma': `Atendimento de QRU de Porte Ilegal de Arma.\n\n📋 Relato:\nA ocorrência foi registrada como Porte Ilegal de Arma. Preencha os dados da ocorrência para complementar o registro.`,
-    'Fuga da Prisão': `Atendimento de QRU de Fuga da Prisão.\n\n📋 Relato:\nA ocorrência foi registrada como Fuga da Prisão. Preencha os dados da ocorrência para complementar o registro.`,
-    'Corrida Ilegal': `Atendimento de QRU de Corrida Ilegal.\n\n📋 Relato:\nA ocorrência foi registrada como Corrida Ilegal. Preencha os dados da ocorrência para complementar o registro.`,
-    'Roubo de Porta Mala': `Atendimento de QRU de Roubo de Porta Mala.\n\n📋 Relato:\nA ocorrência foi registrada como Roubo de Porta Mala. Preencha os dados da ocorrência para complementar o registro.`,
-    'Resgate': `Atendimento de QRU de Resgate.\n\n📋 Relato:\nA ocorrência foi registrada como Resgate. Preencha os dados da ocorrência para complementar o registro.`,
-    'Outros': `Atendimento de QRU de Outros.\n\n📋 Relato:\nA ocorrência foi registrada como Outros. Preencha os dados da ocorrência para complementar o registro.`
+  // Textos oficiais: não inventar nem reutilizar o texto de outro tipo de QRU.
+  const templates={
+    'ATM/Registradora':{
+      title:'Atendimento de QRU de ATM/Registradora.',
+      report:`A ocorrência foi registrada como ATM/Registradora. Preencha os dados da ocorrência para complementar o registro.\n\n🕵️ Detidos:\n• Passaporte: ${passaporte}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n🔍 Observações:\nO detido e os materiais apreendidos foram encaminhados à autoridade competente para a adoção das providências legais cabíveis. A ocorrência foi finalizada com êxito pelas equipes policiais.`
+    },
+    'Fuga de Abordagem':{
+      title:'Fuga de Abordagem',
+      report:`🎖️ 1° Departamento de Polícia Militar - Villa (1° BPM - Villa) 🎖️\n\n📋 Relato:\nApós o acionamento das equipes policiais para atendimento da ocorrência, foi iniciado acompanhamento tático ao veículo suspeito. Durante a intervenção, o indivíduo envolvido na ocorrência desobedeceu às ordens legais de parada e empreendeu fuga, transitando por diferentes vias e expondo terceiros a risco.\n\nAs equipes mantiveram comunicação operacional contínua, realizaram o acompanhamento de forma coordenada e adotaram os procedimentos necessários para preservar a segurança da população e dos agentes envolvidos. Após o cerco e a contenção do veículo, a Polícia obteve êxito na abordagem e na prisão do indivíduo, encerrando a ocorrência sem novas intercorrências.\n\n🕵️ Detidos:\n• Passaporte: ${passaporte}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n🔍 Observações:\nO detido e os materiais apreendidos foram encaminhados à autoridade competente para a adoção das providências legais cabíveis. A ocorrência foi finalizada com êxito pelas equipes policiais.`
+    }
   };
 
-  if(type==='Fuga de Abordagem') return fugaDeAbordagem;
-  const base=modeloPorTipo[type] || `Atendimento de QRU de ${type}.\n\n📋 Relato:\nA ocorrência foi registrada como ${type}.`;
-  return `${base}\n\n🕵️ Detidos:\n• Passaporte: ${passaporte}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n🔍 Observações:\n${obs}`;
+  const t=templates[type];
+  if(t){
+    const title=document.getElementById('qru-titulo');
+    if(title) title.value=t.title;
+    return t.report;
+  }
+
+  // Ainda não existe texto oficial cadastrado para os demais tipos.
+  const title=`${type}`;
+  const titleEl=document.getElementById('qru-titulo');
+  if(titleEl) titleEl.value=title;
+  return `Texto oficial da QRU ${type} ainda não cadastrado.`;
 }
 function updateQRUPreview(){
   const el=document.getElementById('qru-preview');
