@@ -673,24 +673,61 @@ async function progressaoPage(){
     const isProb=carreira==='probatorio';
     const meta=d.metas||{horas:0,pontos:0,qrus:0,acoes:0,cursos:0};
     const v=d.values||{horas:0,pontos:0,qrus:0,acoes:0,cursos:0};
-    const pct=x=>Math.min(100,Math.max(0,Number(x)||0));
-    const item=(label,key,unit='')=>{
-      const target=Number(meta[key]||0), value=Number(v[key]||0), done=target<=0||value>=target, width=target<=0?100:Math.min(100,value/target*100);
-      return `<div class="progress-goal ${done?'goal-done':''}"><div class="goal-icon">${done?'✓':'○'}</div><div class="goal-main"><div><span>${escapeHtml(label)}</span><b>${formatProgressValue(key,value,unit)} <small>/ ${formatProgressValue(key,target,unit)}</small></b></div><div class="goal-track"><i style="width:${width}%"></i></div><small>${done?'Concluído':`Faltam ${formatProgressValue(key,Math.max(0,target-value),unit)}`}</small></div></div>`;
+    const item=(label,key,unit='',icon='◆')=>{
+      const target=Number(meta[key]||0), value=Number(v[key]||0);
+      const done=target<=0||value>=target;
+      const width=target<=0?100:Math.min(100,Math.max(0,value/target*100));
+      const current=formatProgressValue(key,value,unit), targetText=formatProgressValue(key,target,unit);
+      const remaining=target<=0?'Definido pelo Comando':(done?'Concluído':`Faltam ${formatProgressValue(key,Math.max(0,target-value),unit)}`);
+      return `<div class="gtm-progress-goal ${done?'goal-done':''}"><div class="gtm-goal-icon">${done?'✓':icon}</div><div class="gtm-goal-body"><div class="gtm-goal-top"><span>${escapeHtml(label)}</span><b>${current} <small>/ ${targetText}</small></b></div><div class="gtm-goal-track"><i style="width:${width}%"></i></div><small>${remaining}</small></div></div>`;
     };
+    const pct=Math.max(0,Math.min(100,Number(d.percentual)||0));
     const nome=escapeHtml(d.meta?.nome||currentUser?.nome||'Piloto');
-    const patente=escapeHtml(d.meta?.patente|| (isProb?'Piloto Probatório':'Piloto Oficial'));
+    const observacoes=d.meta?.observacoes||'';
+    const criteria=`${item('Horas de serviço','horas','h','◷')}${item('Pontos','pontos','pts','◆')}${item('QRUs','qrus','','◎')}${item('Ações','acoes','','◈')}${item('Cursos','cursos','','▣')}`;
     page.innerHTML=`
-      <div class="progress-page">
-        <section class="progress-hero"><div><span class="eyebrow">PROGRESSÃO DE CARREIRA</span><h1>${patente}</h1><p>${isProb?'Período de avaliação definido pelo Comando.':'Carreira já aprovada como Piloto Oficial.'}</p></div><div class="progress-circle"><b>${isProb?d.percentual:100}%</b><small>${isProb?(d.concluido?'critérios concluídos':'progresso'):'oficial'}</small></div></section>
-        ${isProb?`<section class="progress-section"><div class="progress-section-head"><div><span class="eyebrow">SEU CAMINHO</span><h2>Metas definidas pelo Comando</h2><p>As metas abaixo foram estabelecidas na aprovação da sua conta.</p></div><span class="progress-status ${d.concluido?'done':''}">${d.concluido?'Critérios concluídos':'Em avaliação'}</span></div>
-          <div class="progress-goals-grid">${item('Horas de serviço','horas','h')}${item('Pontos','pontos','pts')}${item('QRUs','qrus','')}${item('Ações','acoes','')}${item('Cursos','cursos','')}</div>
-          <div class="progress-note"><b>${d.concluido?'Você atingiu todas as metas.':'Período probatório'}</b><span>${d.concluido?'Seu desempenho está pronto para análise do Comando.':'Ao atingir todos os critérios, seu desempenho ficará disponível para análise e decisão do Comando.'}</span>${d.concluido?'<button class="btn progress-request-btn" type="button" onclick="requestPromotion()">Solicitar avaliação para promoção</button>':''}</div>
-        </section>`:`<section class="progress-section official-progress"><div class="official-mark">✓</div><div><span class="eyebrow">CARREIRA</span><h2>Piloto Oficial</h2><p>Seu acesso foi aprovado pelo Comando como Piloto Oficial. Não há metas probatórias pendentes.</p></div></section>`}
-        ${isProb&&d.meta?.observacoes?`<section class="progress-section"><span class="eyebrow">OBSERVAÇÕES DO COMANDO</span><p class="command-note">${escapeHtml(d.meta.observacoes)}</p></section>`:''}
+      <div class="gtm-career-page">
+        <section class="gtm-career-hero">
+          <div class="gtm-career-hero-copy">
+            <span class="eyebrow">PROGRESSÃO DE CARREIRA</span>
+            <h1>${isProb?'Piloto Probatório':'Piloto Oficial'}</h1>
+            <p>${isProb?'Próxima patente: <strong>Piloto Oficial</strong>':'Carreira aprovada pelo Comando como <strong>Piloto Oficial</strong>'}</p>
+          </div>
+          <div class="gtm-career-circle" style="--pct:${isProb?pct:100}%"><div><b>${isProb?pct:100}%</b><small>${isProb?'progresso':'oficial'}</small></div></div>
+        </section>
+
+        ${isProb?`
+        <section class="gtm-command-goals">
+          <div class="gtm-section-heading">
+            <div><span class="eyebrow">SEU CAMINHO</span><h2>Requisitos para Piloto Oficial</h2><p>Metas definidas pelo Comando para este período probatório.</p></div>
+            <span class="gtm-career-status ${d.concluido?'done':''}">${d.concluido?'Critérios concluídos':'Em progresso'}</span>
+          </div>
+          <div class="gtm-goals-grid">${criteria}</div>
+          <div class="gtm-command-message"><span class="gtm-message-icon">!</span><div><b>Meta definida pelo Comando</b><p>Ao concluir todos os critérios, você ficará apto para solicitar a avaliação de promoção. A promoção depende da decisão final do Comando.</p></div></div>
+          ${d.concluido?'<button class="btn gtm-promotion-button" type="button" onclick="requestPromotion()">Solicitar avaliação para promoção</button>':''}
+        </section>`:`
+        <section class="gtm-command-goals official-goals-card">
+          <div class="gtm-official-check">✓</div><div><span class="eyebrow">STATUS DA CARREIRA</span><h2>Piloto Oficial</h2><p>Você já foi aprovado pelo Comando. Não existem metas probatórias pendentes.</p></div>
+        </section>`}
+
+        <section class="gtm-career-structure">
+          <div class="gtm-section-heading"><div><span class="eyebrow">ESTRUTURA DA PROGRESSÃO</span><h2>Caminho do GTM</h2><p>A progressão possui apenas duas etapas. As metas do período probatório são individuais e definidas pelo Comando.</p></div></div>
+          <div class="gtm-career-step ${isProb?'current':''}">
+            <div class="gtm-step-number">01</div>
+            <div class="gtm-step-content"><div class="gtm-step-title"><h3>Piloto Probatório</h3>${isProb?'<span>Atual</span>':'<span class="completed-label">Concluído</span>'}</div><p>Período de avaliação com metas personalizadas definidas pelo Comando na aprovação da conta.</p>${isProb?`<div class="gtm-step-meta"><span>Progresso</span><b>${pct}%</b></div><div class="gtm-step-track"><i style="width:${pct}%"></i></div>`:''}</div>
+          </div>
+          <div class="gtm-step-arrow">↓</div>
+          <div class="gtm-career-step ${!isProb?'current':''}">
+            <div class="gtm-step-number">02</div>
+            <div class="gtm-step-content"><div class="gtm-step-title"><h3>Piloto Oficial</h3>${!isProb?'<span>Atual</span>':'<span class="next-label">Próxima etapa</span>'}</div><p>${isProb?'Promoção após conclusão das metas e análise final do Comando.':'Etapa atual da sua carreira dentro do GTM.'}</p></div>
+          </div>
+        </section>
+
+        ${observacoes?`<section class="gtm-command-observations"><span class="eyebrow">OBSERVAÇÕES DO COMANDO</span><p>${escapeHtml(observacoes)}</p></section>`:''}
       </div>`;
   }catch(e){page.innerHTML=`<div class="section"><h3>Não foi possível carregar a progressão</h3><p class="muted">${escapeHtml(e.message)}</p></div>`;}
 }
+
 async function requestPromotion(){try{const d=await api('/api/progressao/solicitar',{method:'POST'});alert(d.message||'Solicitação enviada.');await progressaoPage();}catch(e){alert(e.message);}}
 function formatProgressValue(key,value,unit){
   const n=Number(value)||0;
