@@ -592,30 +592,32 @@ function buildQRUReport(){
   const veiculo=document.getElementById('qru-veiculo')?.value.trim()||'Não informado.';
   const passaporte=document.getElementById('qru-passaporte')?.value.trim()||'Não informado.';
 
-  // Textos oficiais: não inventar nem reutilizar o texto de outro tipo de QRU.
-  const templates={
-    'ATM/Registradora':{
-      title:'Atendimento de QRU de ATM/Registradora.',
-      report:`A ocorrência foi registrada como ATM/Registradora. Preencha os dados da ocorrência para complementar o registro.\n\n🕵️ Detidos:\n• Passaporte: ${passaporte}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n🔍 Observações:\nO detido e os materiais apreendidos foram encaminhados à autoridade competente para a adoção das providências legais cabíveis. A ocorrência foi finalizada com êxito pelas equipes policiais.`
-    },
-    'Fuga de Abordagem':{
-      title:'Fuga de Abordagem',
-      report:`🎖️ 1° Departamento de Polícia Militar - Villa (1° BPM - Villa) 🎖️\n\n📋 Relato:\nApós o acionamento das equipes policiais para atendimento da ocorrência, foi iniciado acompanhamento tático ao veículo suspeito. Durante a intervenção, o indivíduo envolvido na ocorrência desobedeceu às ordens legais de parada e empreendeu fuga, transitando por diferentes vias e expondo terceiros a risco.\n\nAs equipes mantiveram comunicação operacional contínua, realizaram o acompanhamento de forma coordenada e adotaram os procedimentos necessários para preservar a segurança da população e dos agentes envolvidos. Após o cerco e a contenção do veículo, a Polícia obteve êxito na abordagem e na prisão do indivíduo, encerrando a ocorrência sem novas intercorrências.\n\n🕵️ Detidos:\n• Passaporte: ${passaporte}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n🔍 Observações:\nO detido e os materiais apreendidos foram encaminhados à autoridade competente para a adoção das providências legais cabíveis. A ocorrência foi finalizada com êxito pelas equipes policiais.`
-    }
-  };
+  // Modelo oficial informado pelo comando.
+  // O texto é o mesmo para todas as QRUs; somente o tipo selecionado,
+  // o passaporte, os itens apreendidos e o modelo do veículo são dinâmicos.
+  const title=`Atendimento de QRU de ${type}.`;
+  const report=`🎖️ 1° Departamento de Polícia Militar - Villa (1° BPM - Villa) 🎖️
 
-  const t=templates[type];
-  if(t){
-    const title=document.getElementById('qru-titulo');
-    if(title) title.value=t.title;
-    return t.report;
-  }
+📋 Relato:
+Após o acionamento das equipes policiais para atendimento da ocorrência, foi iniciado acompanhamento tático ao veículo suspeito. Durante a intervenção, o indivíduo envolvido na ocorrência desobedeceu às ordens legais de parada e empreendeu fuga, transitando por diferentes vias e expondo terceiros a risco.
 
-  // Ainda não existe texto oficial cadastrado para os demais tipos.
-  const title=`${type}`;
+As equipes mantiveram comunicação operacional contínua, realizaram o acompanhamento de forma coordenada e adotaram os procedimentos necessários para preservar a segurança da população e dos agentes envolvidos. Após o cerco e a contenção do veículo, a Polícia obteve êxito na abordagem e na prisão do indivíduo, encerrando a ocorrência sem novas intercorrências.
+
+🕵️ Detidos:
+• Passaporte: ${passaporte}
+
+🔫 Itens Apreendidos:
+• ${itens}
+
+🚗 Modelo do veículo:
+• ${veiculo}
+
+🔍 Observações:
+O detido e os materiais apreendidos foram encaminhados à autoridade competente para a adoção das providências legais cabíveis. A ocorrência foi finalizada com êxito pelas equipes policiais.`;
+
   const titleEl=document.getElementById('qru-titulo');
   if(titleEl) titleEl.value=title;
-  return `Texto oficial da QRU ${type} ainda não cadastrado.`;
+  return report;
 }
 function updateQRUPreview(){
   const el=document.getElementById('qru-preview');
