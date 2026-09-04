@@ -532,7 +532,6 @@ async function qruPage(){
           <label>Modelo do veículo<input id="qru-veiculo" placeholder="Ex.: Supra"></label>
           <label>Itens apreendidos<input id="qru-itens" placeholder="Ex.: Dinheiro sujo"></label>
           <label>Passaporte do indivíduo<input id="qru-passaporte" placeholder="Ex.: 3936"></label>
-          <label>Detidos<input id="qru-detidos" placeholder="Nome(s) ou 'Não informado'"></label>
           <label class="full">Observações<textarea id="qru-obs" rows="4" placeholder="Informações complementares da ocorrência..."></textarea></label>
           <label class="full">Título do registro<input id="qru-titulo" placeholder="Selecione um tipo para preencher automaticamente"></label>
           <label>Departamento/Unidade<input id="qru-departamento" value="1° Departamento de Polícia Militar - Villa (1° BPM - Villa)"></label>
@@ -559,7 +558,6 @@ async function qruPage(){
     document.getElementById('qru-veiculo').addEventListener('input', updateQRUPreview);
     document.getElementById('qru-itens').addEventListener('input', updateQRUPreview);
     document.getElementById('qru-passaporte').addEventListener('input', updateQRUPreview);
-    document.getElementById('qru-detidos').addEventListener('input', updateQRUPreview);
     document.getElementById('qru-obs').addEventListener('input', updateQRUPreview);
     document.getElementById('qru-departamento').addEventListener('input', updateQRUPreview);
     document.getElementById('qru-titulo').addEventListener('input', updateQRUPreview);
@@ -595,22 +593,38 @@ function previewQRUPhoto(input){
 function buildQRUReport(){
   const type=selectedQRUType();
   const departamento=document.getElementById('qru-departamento')?.value.trim()||'1° Departamento de Polícia Militar - Villa (1° BPM - Villa)';
-  const detidos=document.getElementById('qru-detidos')?.value.trim()||'Não informado.';
   const itens=document.getElementById('qru-itens')?.value.trim()||'Nenhum item informado.';
   const veiculo=document.getElementById('qru-veiculo')?.value.trim()||'Não informado.';
-  const passaporte=document.getElementById('qru-passaporte')?.value.trim();
+  const passaporte=document.getElementById('qru-passaporte')?.value.trim()||'Não informado.';
   const obs=document.getElementById('qru-obs')?.value.trim()||'O detido e os materiais apreendidos foram encaminhados à autoridade competente para a adoção das providências legais cabíveis. A ocorrência foi finalizada com êxito pelas equipes policiais.';
-  const oficiais=(window.qruSelected||[]).map(x=>`• ${x.nome} (ID ${x.matricula||'—'})`).join('\n')||'• Não informado.';
 
-  // Modelo fornecido pelo usuário para Fuga de Abordagem.
-  if(type==='Fuga de Abordagem'){
-    return `🎖️ ${departamento} 🎖️\n\n📋 Relato:\nApós o acionamento das equipes policiais para atendimento da ocorrência, foi iniciado acompanhamento tático ao veículo suspeito. Durante a intervenção, o indivíduo envolvido na ocorrência desobedeceu às ordens legais de parada e empreendeu fuga, transitando por diferentes vias e expondo terceiros a risco.\n\nAs equipes mantiveram comunicação operacional contínua, realizaram o acompanhamento de forma coordenada e adotaram os procedimentos necessários para preservar a segurança da população e dos agentes envolvidos. Após o cerco e a contenção do veículo, a Polícia obteve êxito na abordagem e na prisão do indivíduo, encerrando a ocorrência sem novas intercorrências.\n\n🕵️ Detidos:\n• ${detidos}${passaporte?`\n• Passaporte: ${passaporte}`:''}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n👮 Oficiais Envolvidos:\n${oficiais}\n\n🔍 Observações:\n${obs}`;
-  }
+  // Cada tipo de QRU possui seu próprio modelo. O tipo selecionado NUNCA
+  // deve exibir o texto de outra ocorrência.
+  const fugaDeAbordagem = `🎖️ ${departamento} 🎖️\n\n📋 Relato:\nApós o acionamento das equipes policiais para atendimento da ocorrência, foi iniciado acompanhamento tático ao veículo suspeito. Durante a intervenção, o indivíduo identificado pelo passaporte ${passaporte} desobedeceu às ordens legais de parada e empreendeu fuga utilizando um veículo modelo ${veiculo}, transitando por diferentes vias e expondo terceiros a risco.\n\nAs equipes mantiveram comunicação operacional contínua, realizaram o acompanhamento de forma coordenada e adotaram os procedimentos necessários para preservar a segurança da população e dos agentes envolvidos. Após o cerco e a contenção do veículo, a Polícia obteve êxito na abordagem e na prisão do indivíduo, encerrando a ocorrência sem novas intercorrências.\n\n🕵️ Detidos:\n• Passaporte: ${passaporte}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n🔍 Observações:\n${obs}`;
 
-  // Para os demais tipos, mantém a mesma estrutura, sem inventar um texto específico.
-  return `🎖️ ${departamento} 🎖️\n\n📋 Relato:\nRegistro de ocorrência do tipo ${type}. Preencha e confira este campo antes de registrar a QRU.\n\n🕵️ Detidos:\n• ${detidos}${passaporte?`\n• Passaporte: ${passaporte}`:''}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n👮 Oficiais Envolvidos:\n${oficiais}\n\n🔍 Observações:\n${obs}`;
+  // Para os demais tipos, ainda não foi fornecido um texto oficial completo.
+  // Portanto o sistema identifica corretamente a QRU selecionada sem inventar
+  // um relato e sem reutilizar o modelo de Fuga de Abordagem.
+  const modeloPorTipo = {
+    'ATM/Registradora': `Atendimento de QRU de ATM/Registradora.\n\n📋 Relato:\nA ocorrência foi registrada como ATM/Registradora. Preencha os dados da ocorrência para complementar o registro.`,
+    'Venda de Droga': `Atendimento de QRU de Venda de Droga.\n\n📋 Relato:\nA ocorrência foi registrada como Venda de Droga. Preencha os dados da ocorrência para complementar o registro.`,
+    'Roubo de Veículo/Viatura': `Atendimento de QRU de Roubo de Veículo/Viatura.\n\n📋 Relato:\nA ocorrência foi registrada como Roubo de Veículo/Viatura. Preencha os dados da ocorrência para complementar o registro.`,
+    'Assalto a Mão Armada': `Atendimento de QRU de Assalto a Mão Armada.\n\n📋 Relato:\nA ocorrência foi registrada como Assalto a Mão Armada. Preencha os dados da ocorrência para complementar o registro.`,
+    'Sequestro': `Atendimento de QRU de Sequestro.\n\n📋 Relato:\nA ocorrência foi registrada como Sequestro. Preencha os dados da ocorrência para complementar o registro.`,
+    'Cod 5': `Atendimento de QRU de Cod 5.\n\n📋 Relato:\nA ocorrência foi registrada como Cod 5. Preencha os dados da ocorrência para complementar o registro.`,
+    'Invasão de Propriedade': `Atendimento de QRU de Invasão de Propriedade.\n\n📋 Relato:\nA ocorrência foi registrada como Invasão de Propriedade. Preencha os dados da ocorrência para complementar o registro.`,
+    'Porte Ilegal de Arma': `Atendimento de QRU de Porte Ilegal de Arma.\n\n📋 Relato:\nA ocorrência foi registrada como Porte Ilegal de Arma. Preencha os dados da ocorrência para complementar o registro.`,
+    'Fuga da Prisão': `Atendimento de QRU de Fuga da Prisão.\n\n📋 Relato:\nA ocorrência foi registrada como Fuga da Prisão. Preencha os dados da ocorrência para complementar o registro.`,
+    'Corrida Ilegal': `Atendimento de QRU de Corrida Ilegal.\n\n📋 Relato:\nA ocorrência foi registrada como Corrida Ilegal. Preencha os dados da ocorrência para complementar o registro.`,
+    'Roubo de Porta Mala': `Atendimento de QRU de Roubo de Porta Mala.\n\n📋 Relato:\nA ocorrência foi registrada como Roubo de Porta Mala. Preencha os dados da ocorrência para complementar o registro.`,
+    'Resgate': `Atendimento de QRU de Resgate.\n\n📋 Relato:\nA ocorrência foi registrada como Resgate. Preencha os dados da ocorrência para complementar o registro.`,
+    'Outros': `Atendimento de QRU de Outros.\n\n📋 Relato:\nA ocorrência foi registrada como Outros. Preencha os dados da ocorrência para complementar o registro.`
+  };
+
+  if(type==='Fuga de Abordagem') return fugaDeAbordagem;
+  const base=modeloPorTipo[type] || `Atendimento de QRU de ${type}.\n\n📋 Relato:\nA ocorrência foi registrada como ${type}.`;
+  return `${base}\n\n🕵️ Detidos:\n• Passaporte: ${passaporte}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n🔍 Observações:\n${obs}`;
 }
-
 function updateQRUPreview(){
   const el=document.getElementById('qru-preview');
   if(el) el.value=buildQRUReport();
@@ -618,7 +632,7 @@ function updateQRUPreview(){
 async function submitQRU(){
   const selected=window.qruSelected||[]; if(!selected.length){alert('Selecione pelo menos um oficial envolvido.');return;}
   const titulo=document.getElementById('qru-titulo')?.value.trim()||`QRU — ${selectedQRUType()}`;
-  const payload={tipo:selectedQRUType(),titulo,local:'Villa',dados:{departamento:document.getElementById('qru-departamento')?.value||'',veiculo:document.getElementById('qru-veiculo')?.value||'',itens:document.getElementById('qru-itens')?.value||'',passaporte:document.getElementById('qru-passaporte')?.value||'',detidos:document.getElementById('qru-detidos')?.value||'',observacoes:document.getElementById('qru-obs')?.value||'',oficiais:selected.map(x=>({id:x.id,nome:x.nome,matricula:x.matricula,patente:x.patente})),foto_url:document.getElementById('qru-foto')?.value||'',foto_data:window.qruPhotoData||''},descricao:document.getElementById('qru-preview')?.value||''};
+  const payload={tipo:selectedQRUType(),titulo,local:'Villa',dados:{departamento:document.getElementById('qru-departamento')?.value||'',veiculo:document.getElementById('qru-veiculo')?.value||'',itens:document.getElementById('qru-itens')?.value||'',passaporte:document.getElementById('qru-passaporte')?.value||'',observacoes:document.getElementById('qru-obs')?.value||'',oficiais:selected.map(x=>({id:x.id,nome:x.nome,matricula:x.matricula,patente:x.patente})),foto_url:document.getElementById('qru-foto')?.value||'',foto_data:window.qruPhotoData||''},descricao:document.getElementById('qru-preview')?.value||''};
   try{ const r=await api('/api/ocorrencias',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); alert(`QRU ${r.protocolo} registrada com sucesso.`); loadPage('ocorrencias'); }
   catch(e){alert(e.message);}
 }
