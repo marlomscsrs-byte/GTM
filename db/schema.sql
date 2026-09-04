@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS ocorrencias (
   local VARCHAR(180),
   status VARCHAR(40) DEFAULT 'Aberta',
   criado_por UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+  qru_dados JSONB DEFAULT '{}'::jsonb,
+  foto_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -130,6 +132,8 @@ CREATE TABLE IF NOT EXISTS logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE ocorrencias ADD COLUMN IF NOT EXISTS qru_dados JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE ocorrencias ADD COLUMN IF NOT EXISTS foto_url TEXT;
 CREATE INDEX IF NOT EXISTS idx_ocorrencias_created ON ocorrencias(created_at);
 CREATE INDEX IF NOT EXISTS idx_servicos_data ON servicos(data);
 CREATE INDEX IF NOT EXISTS idx_logs_created ON logs(created_at);

@@ -119,7 +119,7 @@ async function loadPage(name){
   if(name==="dashboard") return dashboard();
   if(name==="escala") return servicePage();
   if(name==="efetivo") return efetivoPage();
-  if(name==="ocorrencias") return tablePage(title,sub,"/api/ocorrencias",["protocolo","tipo","titulo","local","status"]);
+  if(name==="ocorrencias") return qruPage();
   if(name==="admin") return adminPage();
   if(name==="manual") return manualPage();
   page.innerHTML=`<div class="page-head"><div><h1>${title}</h1><p>${sub}</p></div></div>
@@ -503,6 +503,110 @@ function manualPage(){
     ['modulacao','manual-modulacao'],['posicionamento','manual-posicionamento'],['encerramento','manual-encerramento']
   ];
   map.forEach(([oldId,newId])=>{ const el=content.querySelector('#'+oldId); if(el) el.id=newId; });
+}
+
+
+const QRU_TYPES = [
+  'ATM/Registradora','Venda de Droga','Fuga de Abordagem','Roubo de Veículo/Viatura',
+  'Assalto a Mão Armada','Sequestro','Cod 5','Invasão de Propriedade','Porte Ilegal de Arma',
+  'Fuga da Prisão','Corrida Ilegal','Roubo de Porta Mala','Resgate','Outros'
+];
+
+async function qruPage(){
+  try{
+    const officers = await api('/api/efetivo');
+    let selected = [];
+    let photoUrl = '';
+    page.innerHTML = `
+      <div class="qru-head">
+        <div><span class="eyebrow">ATIVIDADE OPERACIONAL</span><h1>Registrar QRU</h1><p>${new Date().toLocaleDateString('pt-BR')}</p></div>
+        <div class="qru-head-actions"><button class="btn secondary" onclick="loadPage('dashboard')">Cancelar</button><button class="btn" onclick="submitQRU()">Registrar QRU</button></div>
+      </div>
+      <section class="qru-section">
+        <div class="qru-section-title"><span>TIPO DE QRU *</span><small>Selecione uma categoria</small></div>
+        <div class="qru-type-grid">${QRU_TYPES.map((t,i)=>`<button type="button" class="qru-type ${i===0?'selected':''}" data-type="${escapeAttr(t)}" onclick="selectQRUType(this)">${escapeHtml(t)}</button>`).join('')}</div>
+      </section>
+      <section class="qru-section">
+        <div class="qru-section-title"><span>DADOS DA OCORRÊNCIA</span><small>Preencha os dados para montar o relato automaticamente.</small></div>
+        <div class="qru-form-grid">
+          <label>Modelo do veículo<input id="qru-veiculo" placeholder="Ex.: Supra"></label>
+          <label>Itens apreendidos<input id="qru-itens" placeholder="Ex.: Dinheiro sujo"></label>
+          <label>Passaporte do indivíduo<input id="qru-passaporte" placeholder="Ex.: 3936"></label>
+          <label>Detidos<input id="qru-detidos" placeholder="Nome(s) ou 'Não informado'"></label>
+          <label class="full">Observações<textarea id="qru-obs" rows="4" placeholder="Informações complementares da ocorrência..."></textarea></label>
+          <label class="full">Título do registro<input id="qru-titulo" placeholder="Selecione um tipo para preencher automaticamente"></label>
+          <label>Departamento/Unidade<input id="qru-departamento" value="1° Departamento de Polícia Militar - Villa (1° BPM - Villa)"></label>
+        </div>
+      </section>
+      <section class="qru-section">
+        <div class="qru-section-title"><span>FOTO DO QRU <em>(OPCIONAL)</em></span><small>PNG, JPG ou link</small></div>
+        <div class="qru-photo-row"><input id="qru-foto" placeholder="Cole o link da imagem (opcional)" onchange="photoUrl=this.value"><label class="qru-upload">↥ Upload<input type="file" accept="image/png,image/jpeg" onchange="previewQRUPhoto(this)"></label><button class="btn secondary" type="button" onclick="document.getElementById('qru-foto').value='';photoUrl=''">Limpar</button></div>
+        <div id="qru-photo-preview" class="qru-photo-preview">Nenhuma imagem selecionada</div>
+      </section>
+      <section class="qru-section">
+        <div class="qru-section-title"><span>OFICIAIS ENVOLVIDOS *</span><small>Selecione quem participou da ocorrência.</small></div>
+        <div id="qru-selected" class="qru-selected"></div>
+        <input id="qru-search" class="qru-search" placeholder="⌕ Buscar por nome ou ID..." oninput="filterQRUOfficers(this.value)">
+        <div id="qru-officers" class="qru-officer-list">${renderQRUOfficers(officers, selected)}</div>
+        <div class="qru-selected-count" id="qru-selected-count">0 oficial(is) selecionado(s)</div>
+      </section>
+      <section class="qru-section qru-preview-section">
+        <div class="qru-section-title"><span>PRÉVIA DO RELATO</span><small>O texto será salvo junto com a ocorrência.</small></div>
+        <pre id="qru-preview" class="qru-preview"></pre>
+      </section>
+      <div class="qru-bottom-actions"><button class="btn secondary" onclick="loadPage('dashboard')">Cancelar</button><button class="btn" onclick="submitQRU()">Registrar QRU</button></div>`;
+    window.qruOfficers = officers; window.qruSelected = selected; window.qruPhotoUrl = photoUrl;
+    document.getElementById('qru-veiculo').addEventListener('input', updateQRUPreview);
+    document.getElementById('qru-itens').addEventListener('input', updateQRUPreview);
+    document.getElementById('qru-passaporte').addEventListener('input', updateQRUPreview);
+    document.getElementById('qru-detidos').addEventListener('input', updateQRUPreview);
+    document.getElementById('qru-obs').addEventListener('input', updateQRUPreview);
+    document.getElementById('qru-departamento').addEventListener('input', updateQRUPreview);
+    document.getElementById('qru-titulo').addEventListener('input', updateQRUPreview);
+    selectQRUType(document.querySelector('.qru-type.selected'));
+  }catch(e){ page.innerHTML=`<div class="section"><h3>Não foi possível carregar o formulário</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`; }
+}
+
+function selectedQRUType(){ return document.querySelector('.qru-type.selected')?.dataset.type || 'Outros'; }
+function selectQRUType(btn){
+  if(!btn)return;
+  document.querySelectorAll('.qru-type').forEach(x=>x.classList.remove('selected')); btn.classList.add('selected');
+  const title=document.getElementById('qru-titulo'); if(title && !title.value) title.value=`QRU — ${btn.dataset.type}`;
+  updateQRUPreview();
+}
+function renderQRUOfficers(rows, selected){
+  const q=(document.getElementById('qru-search')?.value||'').toLowerCase().trim();
+  return rows.filter(r=>!q || `${r.nome} ${r.matricula}`.toLowerCase().includes(q)).map(r=>`<button type="button" class="qru-officer ${selected.some(x=>x.id===r.id)?'picked':''}" onclick="toggleQRUOfficer('${escapeAttr(r.id)}')"><b>${escapeHtml(r.nome)}</b><span>ID: ${escapeHtml(r.matricula||'—')}</span></button>`).join('') || `<div class="qru-empty">Nenhum integrante encontrado.</div>`;
+}
+function filterQRUOfficers(){ document.getElementById('qru-officers').innerHTML=renderQRUOfficers(window.qruOfficers||[],window.qruSelected||[]); }
+function toggleQRUOfficer(id){
+  const rows=window.qruOfficers||[], selected=window.qruSelected||[]; const row=rows.find(r=>r.id===id); if(!row)return;
+  const i=selected.findIndex(x=>x.id===id); if(i>=0) selected.splice(i,1); else selected.push(row);
+  window.qruSelected=selected;
+  document.getElementById('qru-selected').innerHTML=selected.map(r=>`<span class="qru-chip">${escapeHtml(r.nome)} <button type="button" onclick="toggleQRUOfficer('${escapeAttr(r.id)}')">×</button></span>`).join('');
+  document.getElementById('qru-selected-count').textContent=`${selected.length} oficial(is) selecionado(s)`;
+  filterQRUOfficers(); updateQRUPreview();
+}
+function previewQRUPhoto(input){
+  const file=input.files?.[0]; if(!file)return; if(file.size>5*1024*1024){alert('A imagem deve ter no máximo 5 MB.');input.value='';return;}
+  const reader=new FileReader(); reader.onload=()=>{ window.qruPhotoData=reader.result; document.getElementById('qru-photo-preview').innerHTML=`<img src="${reader.result}" alt="Foto do QRU">`; }; reader.readAsDataURL(file);
+}
+function updateQRUPreview(){
+  const type=selectedQRUType(); const departamento=document.getElementById('qru-departamento')?.value||'1° Departamento de Polícia Militar - Villa (1° BPM - Villa)';
+  const detidos=document.getElementById('qru-detidos')?.value.trim()||'Não informado';
+  const itens=document.getElementById('qru-itens')?.value.trim()||'Nenhum item informado';
+  const veiculo=document.getElementById('qru-veiculo')?.value.trim()||'Não informado';
+  const passaporte=document.getElementById('qru-passaporte')?.value.trim(); const obs=document.getElementById('qru-obs')?.value.trim()||'O detido e os materiais apreendidos foram encaminhados à autoridade competente para a adoção das providências legais cabíveis.';
+  const oficiais=(window.qruSelected||[]).map(x=>`• ${x.nome} (ID ${x.matricula||'—'})`).join('\n')||'• Não informado.';
+  const relato=`🎖️ ${departamento} 🎖️\n\n📋 Relato:\nApós o acionamento das equipes policiais para atendimento da ocorrência, foi iniciado acompanhamento e atendimento operacional referente à ${type.toLowerCase()}. Durante a intervenção, as equipes mantiveram comunicação operacional contínua e adotaram os procedimentos necessários para preservar a segurança da população e dos agentes envolvidos. A ocorrência foi conduzida de forma coordenada e encerrada conforme os procedimentos operacionais.\n\n🕵️ Detidos:\n• ${detidos}${passaporte?`\n• Passaporte: ${passaporte}`:''}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n👮 Oficiais Envolvidos:\n${oficiais}\n\n🔍 Observações:\n${obs}`;
+  const el=document.getElementById('qru-preview'); if(el)el.textContent=relato;
+}
+async function submitQRU(){
+  const selected=window.qruSelected||[]; if(!selected.length){alert('Selecione pelo menos um oficial envolvido.');return;}
+  const titulo=document.getElementById('qru-titulo')?.value.trim()||`QRU — ${selectedQRUType()}`;
+  const payload={tipo:selectedQRUType(),titulo,local:'Villa',dados:{departamento:document.getElementById('qru-departamento')?.value||'',veiculo:document.getElementById('qru-veiculo')?.value||'',itens:document.getElementById('qru-itens')?.value||'',passaporte:document.getElementById('qru-passaporte')?.value||'',detidos:document.getElementById('qru-detidos')?.value||'',observacoes:document.getElementById('qru-obs')?.value||'',oficiais:selected.map(x=>({id:x.id,nome:x.nome,matricula:x.matricula,patente:x.patente})),foto_url:document.getElementById('qru-foto')?.value||'',foto_data:window.qruPhotoData||''},descricao:document.getElementById('qru-preview')?.textContent||''};
+  try{ const r=await api('/api/ocorrencias',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); alert(`QRU ${r.protocolo} registrada com sucesso.`); loadPage('ocorrencias'); }
+  catch(e){alert(e.message);}
 }
 
 async function tablePage(title,sub,url,cols){

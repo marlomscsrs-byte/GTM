@@ -429,6 +429,22 @@ app.get("/api/admin/usuarios", auth, requireAdmin, async (_, res) => {
   res.json(rows);
 });
 
+app.post("/api/ocorrencias", auth, async (req, res) => {
+  try {
+    const { tipo, titulo, local, descricao, dados = {} } = req.body || {};
+    if (!tipo || !titulo || !descricao) return res.status(400).json({ error: "Informe o tipo, título e relato da QRU." });
+    if (!Array.isArray(dados.oficiais) || dados.oficiais.length === 0) return res.status(400).json({ error: "Selecione pelo menos um oficial envolvido." });
+    const protocolo = `QRU-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000+Math.random()*9000)}`;
+    const { rows } = await pool.query(
+      `INSERT INTO ocorrencias (protocolo,tipo,titulo,descricao,local,status,criado_por,qru_dados,foto_url)
+       VALUES ($1,$2,$3,$4,$5,'Aberta',$6,$7,$8) RETURNING id, protocolo, created_at`,
+      [protocolo, tipo, titulo, descricao, local || 'Villa', req.user.id, JSON.stringify(dados), dados.foto_url || null]
+    );
+    await pool.query(`INSERT INTO logs (usuario_id,acao,entidade,entidade_id,detalhes) VALUES ($1,'REGISTRAR_QRU','ocorrencias',$2,$3)`, [req.user.id, rows[0].id, JSON.stringify({ protocolo, tipo })]);
+    res.status(201).json(rows[0]);
+  } catch (error) { console.error(error); res.status(500).json({ error: "Não foi possível registrar a QRU." }); }
+});
+
 app.get("/api/ocorrencias", auth, async (_, res) => {
   const { rows } = await pool.query(
     `SELECT id, protocolo, tipo, titulo, local, status, created_at
