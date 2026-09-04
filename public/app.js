@@ -115,6 +115,7 @@ async function loadPage(name){
     manual:["Manual","Procedimentos operacionais"],
     relatorios:["Relatórios","Estatísticas e indicadores"],
     pessoal:["Pessoal","Seu perfil, desempenho e segurança"],
+    progressao:["Progressão","Metas para Piloto Oficial"],
     admin:["Administração","Usuários, contas e configurações"]
   };
   const [title,sub]=titles[name]||titles.dashboard;
@@ -123,6 +124,7 @@ async function loadPage(name){
   if(name==="efetivo") return efetivoPage();
   if(name==="ocorrencias") return qruPage();
   if(name==="acoes") return actionPage();
+  if(name==="progressao") return progressaoPage();
   if(name==="admin") return adminPage();
   if(name==="pessoal") return pessoalPage();
   if(name==="manual") return manualPage();
@@ -518,22 +520,116 @@ async function adminPage(){
     <div class="section approval-section"><div class="section-title-row"><div><h3>SOLICITAÇÕES DE CADASTRO</h3><p class="section-sub">O integrante só entra no Efetivo depois que o Comando aprovar.</p></div><span class="pill">COMANDO</span></div>
       ${pending.length ? `<div class="approval-list">${pending.map(r=>`<div class="approval-card" id="pending-${escapeAttr(r.id)}">
         <div class="approval-main"><div class="approval-avatar">${escapeHtml((r.nome||'?').charAt(0).toUpperCase())}</div><div><b>${escapeHtml(r.nome)}</b><small>ID ${escapeHtml(r.matricula||'—')} • ${escapeHtml(r.patente||'—')}</small><small>Telefone: ${escapeHtml(r.telefone_cidade||'—')} • Usuário: ${escapeHtml(r.username)}</small></div></div>
-        <div class="approval-actions"><button class="btn approve" onclick="processCadastro('${escapeAttr(r.id)}','aprovar')">✓ Aprovar</button><button class="btn reject" onclick="processCadastro('${escapeAttr(r.id)}','recusar')">✕ Recusar</button></div>
+        <div class="approval-actions"><button class="btn approve" onclick="openApproval('${escapeAttr(r.id)}','${escapeAttr(r.nome)}')">✓ Aprovar</button><button class="btn reject" onclick="processCadastro('${escapeAttr(r.id)}','recusar')">✕ Recusar</button></div>
       </div>`).join('')}</div>` : `<div class="empty-state"><b>Nenhuma solicitação pendente</b><span>Quando um integrante criar uma conta, o pedido aparecerá aqui.</span></div>`}
     </div>
+    <div class="section approval-section"><div class="section-title-row"><div><h3>PROGRESSÃO E METAS</h3><p class="section-sub">Metas definidas no momento da aprovação. Solicitações concluídas ficam disponíveis para decisão do Comando.</p></div></div>
+    <div class="table-wrap"><table class="table"><thead><tr><th>NOME</th><th>CARREIRA</th><th>METAS</th><th>SOLICITAÇÃO</th></tr></thead><tbody>
+    ${rows.filter(r=>r.carreira==='probatorio').map(r=>`<tr>
+      <td><b>${escapeHtml(r.nome)}</b><small style="display:block;color:#777">ID ${escapeHtml(r.matricula||'—')}</small></td>
+      <td>Piloto Probatório</td>
+      <td>${escapeHtml(r.horas_meta)}h • ${escapeHtml(r.pontos_meta)} pts • ${escapeHtml(r.qru_meta)} QRUs • ${escapeHtml(r.acoes_meta)} ações</td>
+      <td>${r.solicitacao_id ? `<div class="progress-admin-actions"><span class="status status-pending">Avaliação pendente</span><button class="mini-btn" onclick="decidePromotion('${escapeAttr(r.solicitacao_id)}','promover')">Promover</button><button class="mini-btn secondary-mini" onclick="decidePromotion('${escapeAttr(r.solicitacao_id)}','manter')">Manter</button></div>` : '<span style="color:#777">Em andamento</span>'}</td>
+    </tr>`).join('') || '<tr><td colspan="4" style="color:#777">Nenhum piloto probatório cadastrado.</td></tr>'}
+    </tbody></table></div></div>
     <div class="section"><div class="section-title-row"><div><h3>CONTAS DO SISTEMA</h3><p class="section-sub">Somente cadastros aprovados aparecem vinculados ao efetivo.</p></div></div>
-    <div class="table-wrap"><table class="table"><thead><tr><th>USUÁRIO</th><th>NOME</th><th>ID</th><th>PATENTE</th><th>TELEFONE</th><th>PERFIL</th><th>STATUS</th></tr></thead><tbody>
-    ${rows.map(r=>`<tr><td><b>${escapeHtml(r.username)}</b></td><td>${escapeHtml(r.nome)}</td><td>${escapeHtml(r.matricula||'—')}</td><td>${escapeHtml(r.patente||'—')}</td><td>${escapeHtml(r.telefone_cidade||'—')}</td><td>${r.role==='admin'?'Comando':'Operador'}</td><td><span class="status ${r.status_cadastro==='aprovado'&&r.ativo?'status-active':r.status_cadastro==='pendente'?'status-pending':'status-inactive'}">${r.status_cadastro==='aprovado'&&r.ativo?'Aprovado':r.status_cadastro==='pendente'?'Pendente':'Recusado'}</span></td></tr>`).join('')}
+    <div class="table-wrap"><table class="table"><thead><tr><th>USUÁRIO</th><th>NOME</th><th>ID</th><th>CARREIRA</th><th>TELEFONE</th><th>PERFIL</th><th>STATUS</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td><b>${escapeHtml(r.username)}</b></td><td>${escapeHtml(r.nome)}</td><td>${escapeHtml(r.matricula||'—')}</td><td>${escapeHtml(r.nivel_carreira==='oficial'?'Piloto Oficial':r.nivel_carreira==='probatorio'?'Piloto Probatório':(r.patente||'—'))}</td><td>${escapeHtml(r.telefone_cidade||'—')}</td><td>${r.role==='admin'?'Comando':'Operador'}</td><td><span class="status ${r.status_cadastro==='aprovado'&&r.ativo?'status-active':r.status_cadastro==='pendente'?'status-pending':'status-inactive'}">${r.status_cadastro==='aprovado'&&r.ativo?'Aprovado':r.status_cadastro==='pendente'?'Pendente':'Recusado'}</span></td></tr>`).join('')}
     </tbody></table></div></div>`;
   }catch(e){ page.innerHTML=`<div class="section"><h3>Não foi possível carregar a administração</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`; }
 }
 
+function openApproval(id,nome){
+  document.getElementById('approval-modal')?.remove();
+  document.body.insertAdjacentHTML('beforeend',`
+    <div class="modal approval-modal" id="approval-modal">
+      <div class="modal-card approval-card">
+        <button class="modal-close" type="button" onclick="closeApproval()">×</button>
+        <span class="eyebrow">APROVAÇÃO DO COMANDO</span>
+        <h2>Aprovar cadastro</h2>
+        <p class="approval-modal-user">${escapeHtml(nome)}</p>
+        <label class="approval-label">CARREIRA
+          <select id="approval-career" onchange="toggleApprovalGoals()">
+            <option value="probatorio">Piloto Probatório</option>
+            <option value="oficial">Piloto Oficial</option>
+          </select>
+        </label>
+        <div id="approval-goals" class="approval-goals">
+          <div class="approval-goals-title">METAS DO PERÍODO PROBATÓRIO <small>Defina agora o que será exigido para promoção.</small></div>
+          <div class="approval-goals-grid">
+            <label>Horas de serviço<input id="meta-horas" type="number" min="0" step="0.5" value="20"></label>
+            <label>Pontos<input id="meta-pontos" type="number" min="0" step="0.5" value="15"></label>
+            <label>QRUs<input id="meta-qrus" type="number" min="0" step="1" value="5"></label>
+            <label>Ações<input id="meta-acoes" type="number" min="0" step="1" value="3"></label>
+            <label>Cursos<input id="meta-cursos" type="number" min="0" step="1" value="0"></label>
+          </div>
+          <label class="approval-label">Observações<textarea id="meta-observacoes" placeholder="Observações do Comando (opcional)"></textarea></label>
+        </div>
+        <div class="approval-modal-actions">
+          <button class="btn secondary" type="button" onclick="closeApproval()">Cancelar</button>
+          <button class="btn" type="button" onclick="confirmApproval('${escapeAttr(id)}')">Confirmar aprovação</button>
+        </div>
+        <div id="approval-error" class="form-error"></div>
+      </div>
+    </div>`);
+}
+function toggleApprovalGoals(){
+  const el=document.getElementById('approval-goals');
+  if(el) el.classList.toggle('hidden',document.getElementById('approval-career')?.value==='oficial');
+}
+function closeApproval(){document.getElementById('approval-modal')?.remove();}
+async function confirmApproval(id){
+  const career=document.getElementById('approval-career')?.value||'probatorio';
+  const body={carreira:career,observacoes:document.getElementById('meta-observacoes')?.value||'',metas:{
+    horas:document.getElementById('meta-horas')?.value,pontos:document.getElementById('meta-pontos')?.value,qrus:document.getElementById('meta-qrus')?.value,
+    acoes:document.getElementById('meta-acoes')?.value,cursos:document.getElementById('meta-cursos')?.value
+  }};
+  try{
+    const data=await api(`/api/admin/cadastros/${encodeURIComponent(id)}/aprovar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    closeApproval(); alert(data.message||'Cadastro aprovado.'); await adminPage();
+  }catch(e){const el=document.getElementById('approval-error');if(el)el.textContent=e.message;else alert(e.message);}
+}
+
+async function decidePromotion(id,decisao){const texto=decisao==='promover'?'Promover este piloto para Piloto Oficial?':'Manter este piloto como Piloto Probatório?';if(!confirm(texto))return;try{const d=await api(`/api/admin/progressao/${encodeURIComponent(id)}/decidir`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decisao})});alert(d.message||'Decisão registrada.');await adminPage();}catch(e){alert(e.message);}}
 async function processCadastro(id, action){
   try{
     const data=await api(`/api/admin/cadastros/${encodeURIComponent(id)}/${action}`,{method:'POST'});
     alert(data.message || 'Operação concluída.');
     await adminPage();
   }catch(e){ alert(e.message); }
+}
+
+async function progressaoPage(){
+  try{
+    const d=await api('/api/progressao');
+    const carreira=d.carreira||'probatorio';
+    const isProb=carreira==='probatorio';
+    const meta=d.metas||{horas:0,pontos:0,qrus:0,acoes:0,cursos:0};
+    const v=d.values||{horas:0,pontos:0,qrus:0,acoes:0,cursos:0};
+    const pct=x=>Math.min(100,Math.max(0,Number(x)||0));
+    const item=(label,key,unit='')=>{
+      const target=Number(meta[key]||0), value=Number(v[key]||0), done=target<=0||value>=target, width=target<=0?100:Math.min(100,value/target*100);
+      return `<div class="progress-goal ${done?'goal-done':''}"><div class="goal-icon">${done?'✓':'○'}</div><div class="goal-main"><div><span>${escapeHtml(label)}</span><b>${formatProgressValue(key,value,unit)} <small>/ ${formatProgressValue(key,target,unit)}</small></b></div><div class="goal-track"><i style="width:${width}%"></i></div><small>${done?'Concluído':`Faltam ${formatProgressValue(key,Math.max(0,target-value),unit)}`}</small></div></div>`;
+    };
+    const nome=escapeHtml(d.meta?.nome||currentUser?.nome||'Piloto');
+    const patente=escapeHtml(d.meta?.patente|| (isProb?'Piloto Probatório':'Piloto Oficial'));
+    page.innerHTML=`
+      <div class="progress-page">
+        <section class="progress-hero"><div><span class="eyebrow">PROGRESSÃO DE CARREIRA</span><h1>${patente}</h1><p>${isProb?'Período de avaliação definido pelo Comando.':'Carreira já aprovada como Piloto Oficial.'}</p></div><div class="progress-circle"><b>${isProb?d.percentual:100}%</b><small>${isProb?(d.concluido?'critérios concluídos':'progresso'):'oficial'}</small></div></section>
+        ${isProb?`<section class="progress-section"><div class="progress-section-head"><div><span class="eyebrow">SEU CAMINHO</span><h2>Metas definidas pelo Comando</h2><p>As metas abaixo foram estabelecidas na aprovação da sua conta.</p></div><span class="progress-status ${d.concluido?'done':''}">${d.concluido?'Critérios concluídos':'Em avaliação'}</span></div>
+          <div class="progress-goals-grid">${item('Horas de serviço','horas','h')}${item('Pontos','pontos','pts')}${item('QRUs','qrus','')}${item('Ações','acoes','')}${item('Cursos','cursos','')}</div>
+          <div class="progress-note"><b>${d.concluido?'Você atingiu todas as metas.':'Período probatório'}</b><span>${d.concluido?'Seu desempenho está pronto para análise do Comando.':'Ao atingir todos os critérios, seu desempenho ficará disponível para análise e decisão do Comando.'}</span>${d.concluido?'<button class="btn progress-request-btn" type="button" onclick="requestPromotion()">Solicitar avaliação para promoção</button>':''}</div>
+        </section>`:`<section class="progress-section official-progress"><div class="official-mark">✓</div><div><span class="eyebrow">CARREIRA</span><h2>Piloto Oficial</h2><p>Seu acesso foi aprovado pelo Comando como Piloto Oficial. Não há metas probatórias pendentes.</p></div></section>`}
+        ${isProb&&d.meta?.observacoes?`<section class="progress-section"><span class="eyebrow">OBSERVAÇÕES DO COMANDO</span><p class="command-note">${escapeHtml(d.meta.observacoes)}</p></section>`:''}
+      </div>`;
+  }catch(e){page.innerHTML=`<div class="section"><h3>Não foi possível carregar a progressão</h3><p class="muted">${escapeHtml(e.message)}</p></div>`;}
+}
+async function requestPromotion(){try{const d=await api('/api/progressao/solicitar',{method:'POST'});alert(d.message||'Solicitação enviada.');await progressaoPage();}catch(e){alert(e.message);}}
+function formatProgressValue(key,value,unit){
+  const n=Number(value)||0;
+  if(key==='horas') return `${n.toFixed(n%1?1:0)}${unit}`;
+  if(key==='pontos') return `${n.toFixed(n%1?1:0)} ${unit}`.trim();
+  return `${Math.round(n)}${unit?' '+unit:''}`;
 }
 
 function manualPage(){

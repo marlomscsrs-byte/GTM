@@ -409,6 +409,16 @@ app.get("/api/admin/cadastros-pendentes", auth, requireAdmin, async (_, res) => 
 });
 
 app.post("/api/admin/cadastros/:id/aprovar", auth, requireAdmin, async (req, res) => {
+  const career = req.body?.carreira === 'oficial' ? 'oficial' : 'probatorio';
+  const metas = req.body?.metas || {};
+  const horas_meta = Number(metas.horas ?? 20);
+  const pontos_meta = Number(metas.pontos ?? 15);
+  const qru_meta = Number(metas.qrus ?? 5);
+  const acoes_meta = Number(metas.acoes ?? 3);
+  const cursos_meta = Number(metas.cursos ?? 0);
+  if (career === 'probatorio' && (!Number.isFinite(horas_meta) || horas_meta < 0 || !Number.isFinite(pontos_meta) || pontos_meta < 0 || !Number.isFinite(qru_meta) || qru_meta < 0 || !Number.isFinite(acoes_meta) || acoes_meta < 0 || !Number.isFinite(cursos_meta) || cursos_meta < 0)) {
+    return res.status(400).json({ error: "As metas do período probatório devem ser números válidos." });
+  }
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -426,28 +436,136 @@ app.post("/api/admin/cadastros/:id/aprovar", auth, requireAdmin, async (req, res
       return res.status(409).json({ error: "O ID informado já existe no efetivo." });
     }
 
+    const patente = career === 'oficial' ? 'Piloto Oficial' : 'Piloto Probatório';
     const efetivoResult = await client.query(
-      `INSERT INTO efetivo (usuario_id, nome, matricula, patente, status, unidade, ativo, telefone_cidade)
-       VALUES ($1,$2,$3,$4,'Ativo','A definir',true,$5)
+      `INSERT INTO efetivo (usuario_id, nome, matricula, patente, status, unidade, ativo, data_ingresso, telefone_cidade, nivel_carreira)
+       VALUES ($1,$2,$3,$4,'Ativo',$4,true,current_date,$5,$6)
        RETURNING id`,
-      [user.id, user.nome, user.matricula, user.patente, user.telefone_cidade]
+      [user.id, user.nome, user.matricula, patente, user.telefone_cidade, career]
     );
 
     await client.query(
-      `UPDATE usuarios SET ativo=true, aprovado=true, status_cadastro='aprovado' WHERE id=$1`, [user.id]
+      `UPDATE usuarios SET ativo=true, aprovado=true, status_cadastro='aprovado', patente=$1, nivel_carreira=$2 WHERE id=$3`,
+      [patente, career, user.id]
     );
+
+    await client.query(
+      `INSERT INTO progressao_metas (usuario_id, efetivo_id, carreira, horas_meta, pontos_meta, qru_meta, acoes_meta, cursos_meta, definido_por, observacoes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       ON CONFLICT (usuario_id) DO UPDATE SET efetivo_id=EXCLUDED.efetivo_id, carreira=EXCLUDED.carreira,
+         horas_meta=EXCLUDED.horas_meta, pontos_meta=EXCLUDED.pontos_meta, qru_meta=EXCLUDED.qru_meta,
+         acoes_meta=EXCLUDED.acoes_meta, cursos_meta=EXCLUDED.cursos_meta, definido_por=EXCLUDED.definido_por,
+         definido_em=now(), observacoes=EXCLUDED.observacoes`,
+      [user.id, efetivoResult.rows[0].id, career, career === 'probatorio' ? horas_meta : 0, career === 'probatorio' ? pontos_meta : 0,
+       career === 'probatorio' ? qru_meta : 0, career === 'probatorio' ? acoes_meta : 0, career === 'probatorio' ? cursos_meta : 0,
+       req.user.id, String(req.body?.observacoes || '').trim() || null]
+    );
+
     await client.query(
       `INSERT INTO logs (usuario_id, acao, entidade, entidade_id, detalhes)
        VALUES ($1,'APROVAR_CADASTRO','efetivo',$2,$3)`,
-      [req.user.id, efetivoResult.rows[0].id, JSON.stringify({ usuario_id: user.id, matricula: user.matricula })]
+      [req.user.id, efetivoResult.rows[0].id, JSON.stringify({ usuario_id: user.id, matricula: user.matricula, carreira: career, metas: career === 'probatorio' ? { horas_meta, pontos_meta, qru_meta, acoes_meta, cursos_meta } : null })]
     );
     await client.query("COMMIT");
-    res.json({ ok: true, message: "Cadastro aprovado e incluído no efetivo." });
+    res.json({ ok: true, message: career === 'probatorio' ? "Cadastro aprovado como Piloto Probatório e metas definidas." : "Cadastro aprovado como Piloto Oficial." });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error(error);
     res.status(500).json({ error: "Não foi possível aprovar o cadastro." });
   } finally { client.release(); }
+});
+
+app.get("/api/progressao", auth, async (req, res) => {
+  try {
+    const [metaQ, pointQ, qruQ, actionQ, certQ] = await Promise.all([
+      pool.query(`SELECT pm.*, e.nome, e.patente, e.data_ingresso
+                  FROM progressao_metas pm JOIN efetivo e ON e.id=pm.efetivo_id
+                  WHERE pm.usuario_id=$1 LIMIT 1`, [req.user.id]),
+      pool.query(`SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(saida,now())-entrada))/3600.0),0) AS horas
+                  FROM pontos_servico WHERE usuario_id=$1`, [req.user.id]),
+      pool.query(`SELECT COUNT(*)::int AS n FROM ocorrencias WHERE criado_por=$1`, [req.user.id]),
+      pool.query(`SELECT COUNT(*)::int AS n, COALESCE(SUM(pontos),0) AS pontos FROM acoes WHERE usuario_id=$1`, [req.user.id]),
+      pool.query(`SELECT COUNT(*)::int AS n FROM certificacoes c JOIN efetivo e ON e.id=c.efetivo_id WHERE e.usuario_id=$1 AND (c.status='Válida' OR c.status IS NULL)`, [req.user.id])
+    ]);
+    const meta=metaQ.rows[0]||null;
+    const horas=Number(pointQ.rows[0]?.horas||0);
+    const qrus=Number(qruQ.rows[0]?.n||0);
+    const acoes=Number(actionQ.rows[0]?.n||0);
+    const pontos=Number(actionQ.rows[0]?.pontos||0)+(qrus*3);
+    const cursos=Number(certQ.rows[0]?.n||0);
+    const values={horas,pontos,qrus,acoes,cursos};
+    const metas=meta?{horas:Number(meta.horas_meta||0),pontos:Number(meta.pontos_meta||0),qrus:Number(meta.qru_meta||0),acoes:Number(meta.acoes_meta||0),cursos:Number(meta.cursos_meta||0)}:null;
+    const keys=Object.keys(values);
+    const checks=metas?keys.map(k=>metas[k] <= 0 ? true : values[k] >= metas[k]):[];
+    const concluido=!!meta && meta.carreira==='probatorio' && checks.every(Boolean);
+    const percentual=metas && meta.carreira==='probatorio' ? Math.round(keys.reduce((sum,k)=>sum+Math.min(1, metas[k]<=0?1:values[k]/metas[k]),0)/keys.length*100) : 100;
+    res.json({ carreira:meta?.carreira||'probatorio', meta, values, metas, checks, concluido, percentual });
+  } catch(error){ console.error(error); res.status(500).json({error:"Não foi possível carregar sua progressão."}); }
+});
+
+app.post("/api/progressao/solicitar", auth, async (req,res)=>{
+  try{
+    const p=await pool.query(`SELECT carreira FROM progressao_metas WHERE usuario_id=$1 LIMIT 1`,[req.user.id]);
+    if(!p.rows[0] || p.rows[0].carreira!=='probatorio') return res.status(400).json({error:"Somente Pilotos Probatórios podem solicitar a avaliação."});
+    const prog=await pool.query(`SELECT horas_meta,pontos_meta,qru_meta,acoes_meta,cursos_meta FROM progressao_metas WHERE usuario_id=$1`,[req.user.id]);
+    const m=prog.rows[0];
+    const [h,q,a,c]=await Promise.all([
+      pool.query(`SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(saida,now())-entrada))/3600.0),0) AS n FROM pontos_servico WHERE usuario_id=$1`,[req.user.id]),
+      pool.query(`SELECT COUNT(*)::int AS n FROM ocorrencias WHERE criado_por=$1`,[req.user.id]),
+      pool.query(`SELECT COUNT(*)::int AS n FROM acoes WHERE usuario_id=$1`,[req.user.id]),
+      pool.query(`SELECT COUNT(*)::int AS n FROM certificacoes c JOIN efetivo e ON e.id=c.efetivo_id WHERE e.usuario_id=$1 AND (c.status='Válida' OR c.status IS NULL)`,[req.user.id])
+    ]);
+    const horas=Number(h.rows[0].n||0), qrus=Number(q.rows[0].n||0), acoes=Number(a.rows[0].n||0), cursos=Number(c.rows[0].n||0);
+    const ar=await pool.query(`SELECT COALESCE(SUM(pontos),0) AS n FROM acoes WHERE usuario_id=$1`,[req.user.id]);
+    const pontos=Number(ar.rows[0].n||0)+qrus*3;
+    const ok=horas>=Number(m.horas_meta||0)&&pontos>=Number(m.pontos_meta||0)&&qrus>=Number(m.qru_meta||0)&&acoes>=Number(m.acoes_meta||0)&&cursos>=Number(m.cursos_meta||0);
+    if(!ok) return res.status(400).json({error:"Você ainda não atingiu todos os critérios definidos pelo Comando."});
+    const r=await pool.query(`INSERT INTO progressao_solicitacoes(usuario_id,status) VALUES($1,'pendente') RETURNING id,created_at`,[req.user.id]);
+    await pool.query(`INSERT INTO logs(usuario_id,acao,entidade,entidade_id,detalhes) VALUES($1,'SOLICITAR_PROMOCAO','progressao_solicitacoes',$2,$3)`,[req.user.id,r.rows[0].id,JSON.stringify({carreira:'probatorio'})]);
+    res.status(201).json({ok:true,message:"Solicitação de avaliação enviada ao Comando."});
+  }catch(error){
+    if(error.code==='23505') return res.status(409).json({error:"Sua solicitação de avaliação já está pendente."});
+    console.error(error);res.status(500).json({error:"Não foi possível solicitar a avaliação."});
+  }
+});
+
+app.post("/api/admin/progressao/:solicitacaoId/decidir", auth, requireAdmin, async (req,res)=>{
+  const decisao=req.body?.decisao==='promover'?'promover':'manter';
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const q=await client.query(`SELECT ps.id,ps.usuario_id,pm.efetivo_id FROM progressao_solicitacoes ps JOIN progressao_metas pm ON pm.usuario_id=ps.usuario_id WHERE ps.id=$1 AND ps.status='pendente' FOR UPDATE`,[req.params.solicitacaoId]);
+    if(!q.rows[0]){await client.query('ROLLBACK');return res.status(404).json({error:'Solicitação de avaliação não encontrada.'});}
+    const row=q.rows[0];
+    if(decisao==='promover'){
+      await client.query(`UPDATE usuarios SET patente='Piloto Oficial',nivel_carreira='oficial' WHERE id=$1`,[row.usuario_id]);
+      await client.query(`UPDATE efetivo SET patente='Piloto Oficial',unidade='Piloto Oficial',nivel_carreira='oficial' WHERE id=$1`,[row.efetivo_id]);
+      await client.query(`UPDATE progressao_metas SET carreira='oficial',horas_meta=0,pontos_meta=0,qru_meta=0,acoes_meta=0,cursos_meta=0,observacoes=COALESCE(observacoes,'') || CASE WHEN COALESCE(observacoes,'')='' THEN 'Promoção aprovada pelo Comando.' ELSE E'\\nPromoção aprovada pelo Comando.' END WHERE usuario_id=$1`,[row.usuario_id]);
+    }
+    await client.query(`UPDATE progressao_solicitacoes SET status=$1,decidido_por=$2,decidido_em=now(),observacoes=$3 WHERE id=$4`,[decisao==='promover'?'aprovada':'mantida',req.user.id,String(req.body?.observacoes||'').trim()||null,req.params.solicitacaoId]);
+    await client.query(`INSERT INTO logs(usuario_id,acao,entidade,entidade_id,detalhes) VALUES($1,'DECIDIR_PROMOCAO','progressao_solicitacoes',$2,$3)`,[req.user.id,row.id,JSON.stringify({usuario_id:row.usuario_id,decisao})]);
+    await client.query('COMMIT');
+    res.json({ok:true,message:decisao==='promover'?'Promoção aprovada. O integrante agora é Piloto Oficial.':'Solicitação encerrada. O integrante permanece como Piloto Probatório.'});
+  }catch(error){await client.query('ROLLBACK');console.error(error);res.status(500).json({error:'Não foi possível registrar a decisão.'});}finally{client.release();}
+});
+
+app.get("/api/admin/progressao", auth, requireAdmin, async (_, res) => {
+  try {
+    const {rows}=await pool.query(`SELECT pm.id,pm.usuario_id,pm.efetivo_id,pm.carreira,pm.horas_meta,pm.pontos_meta,pm.qru_meta,pm.acoes_meta,pm.cursos_meta,pm.observacoes,pm.definido_em,e.nome,e.matricula,e.patente, ps.id AS solicitacao_id, ps.status AS solicitacao_status
+      FROM progressao_metas pm JOIN efetivo e ON e.id=pm.efetivo_id LEFT JOIN progressao_solicitacoes ps ON ps.usuario_id=pm.usuario_id AND ps.status='pendente' ORDER BY e.nome`);
+    res.json(rows);
+  }catch(error){console.error(error);res.status(500).json({error:"Não foi possível carregar as metas."});}
+});
+
+app.put("/api/admin/progressao/:usuarioId", auth, requireAdmin, async (req,res)=>{
+  const m=req.body?.metas||{};
+  const vals=[Number(m.horas),Number(m.pontos),Number(m.qrus),Number(m.acoes),Number(m.cursos||0)];
+  if(vals.some(v=>!Number.isFinite(v)||v<0)) return res.status(400).json({error:"Informe metas numéricas válidas."});
+  try{
+    const r=await pool.query(`UPDATE progressao_metas SET horas_meta=$1,pontos_meta=$2,qru_meta=$3,acoes_meta=$4,cursos_meta=$5,observacoes=$6,definido_por=$7,definido_em=now() WHERE usuario_id=$8 RETURNING *`,[...vals,String(req.body?.observacoes||'').trim()||null,req.user.id,req.params.usuarioId]);
+    if(!r.rows[0]) return res.status(404).json({error:"Metas não encontradas."});
+    res.json({ok:true,metas:r.rows[0],message:"Metas atualizadas com sucesso."});
+  }catch(error){console.error(error);res.status(500).json({error:"Não foi possível atualizar as metas."});}
 });
 
 app.post("/api/admin/cadastros/:id/recusar", auth, requireAdmin, async (req, res) => {
@@ -471,7 +589,7 @@ app.post("/api/admin/cadastros/:id/recusar", auth, requireAdmin, async (req, res
 
 app.get("/api/admin/usuarios", auth, requireAdmin, async (_, res) => {
   const { rows } = await pool.query(
-    `SELECT u.id, u.username, u.nome, u.matricula, u.patente, u.email, u.telefone_cidade, u.role, u.ativo, u.aprovado, u.status_cadastro, u.ultimo_acesso,
+    `SELECT u.id, u.username, u.nome, u.matricula, u.patente, u.nivel_carreira, u.email, u.telefone_cidade, u.role, u.ativo, u.aprovado, u.status_cadastro, u.ultimo_acesso,
             e.id AS efetivo_id, e.matricula
      FROM usuarios u
      LEFT JOIN efetivo e ON e.usuario_id=u.id

@@ -193,3 +193,37 @@ CREATE TABLE IF NOT EXISTS acoes (
 );
 CREATE INDEX IF NOT EXISTS idx_acoes_created ON acoes(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_acoes_usuario ON acoes(usuario_id, created_at DESC);
+
+-- Progressão GTM: somente dois níveis de carreira. As metas são definidas pelo Comando.
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nivel_carreira VARCHAR(20);
+ALTER TABLE efetivo ADD COLUMN IF NOT EXISTS nivel_carreira VARCHAR(20);
+
+CREATE TABLE IF NOT EXISTS progressao_metas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL UNIQUE REFERENCES usuarios(id) ON DELETE CASCADE,
+  efetivo_id UUID NOT NULL REFERENCES efetivo(id) ON DELETE CASCADE,
+  carreira VARCHAR(20) NOT NULL DEFAULT 'probatorio',
+  horas_meta NUMERIC(10,1) NOT NULL DEFAULT 20,
+  pontos_meta NUMERIC(10,1) NOT NULL DEFAULT 15,
+  qru_meta INT NOT NULL DEFAULT 5,
+  acoes_meta INT NOT NULL DEFAULT 3,
+  cursos_meta INT NOT NULL DEFAULT 0,
+  observacoes TEXT,
+  definido_por UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+  definido_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_progressao_metas_efetivo ON progressao_metas(efetivo_id);
+CREATE INDEX IF NOT EXISTS idx_progressao_metas_carreira ON progressao_metas(carreira);
+
+CREATE TABLE IF NOT EXISTS progressao_solicitacoes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  status VARCHAR(30) NOT NULL DEFAULT 'pendente',
+  observacoes TEXT,
+  decidido_por UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+  decidido_em TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_progressao_solicitacoes_status ON progressao_solicitacoes(status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_progressao_solicitacoes_pendente ON progressao_solicitacoes(usuario_id) WHERE status='pendente';
