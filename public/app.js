@@ -348,7 +348,7 @@ function action(icon,title,sub,target){return `<button class="action" onclick="l
 
 async function pessoalPage(){
   try{
-    const d=await api('/api/pessoal');
+    const [d, prog] = await Promise.all([api('/api/pessoal'), api('/api/progressao')]);
     const u=d.user||{}, m=d.metrics||{}, ev=d.events||{};
     const initials=escapeHtml((u.nome||'GTM').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase());
     const rank=escapeHtml(u.patente||'Integrante GTM');
@@ -386,11 +386,14 @@ async function pessoalPage(){
 
         <div class="personal-main-grid">
           <section class="personal-panel performance-panel">
-            <div class="personal-panel-head"><div><span class="eyebrow">DESEMPENHO</span><h2>Meu desempenho</h2><p>Evolução e previsão para o próximo UP</p></div><span class="personal-badge">Previsão mínima: ${Math.max(0,20-days)} dia(s)</span></div>
-            ${personalProgress('Horas',m.totalHours||0,12,formatHours(m.totalHours||0)+' / 12h')}
-            ${personalProgress('Pontos semanais',m.weekPoints||0,10,Number(m.weekPoints||0).toFixed(1)+' pts / 10 pts')}
-            ${personalProgress('Dias na patente',days,20,days+' dias / 20 dias')}
-            ${personalProgress('Recrutamentos',0,2,'0 / 2')}
+            <div class="personal-panel-head"><div><span class="eyebrow">DESEMPENHO</span><h2>Meu desempenho</h2><p>${prog.carreira==='probatorio'?'Metas definidas pelo Comando para o seu período probatório.':'Carreira aprovada pelo Comando como Piloto Oficial.'}</p></div><span class="personal-badge">${prog.carreira==='probatorio'?(prog.concluido?'Critérios concluídos':'Em avaliação'):'Piloto Oficial'}</span></div>
+            ${prog.carreira==='probatorio' ? `
+              ${personalProgress('Horas de serviço',prog.values?.horas||0,prog.metas?.horas||0,formatProgressValue('horas',prog.values?.horas||0,'h')+' / '+formatProgressValue('horas',prog.metas?.horas||0,'h'))}
+              ${personalProgress('Pontos',prog.values?.pontos||0,prog.metas?.pontos||0,formatProgressValue('pontos',prog.values?.pontos||0,'pts')+' / '+formatProgressValue('pontos',prog.metas?.pontos||0,'pts'))}
+              ${personalProgress('QRUs',prog.values?.qrus||0,prog.metas?.qrus||0,formatProgressValue('qrus',prog.values?.qrus||0)+' / '+formatProgressValue('qrus',prog.metas?.qrus||0))}
+              ${personalProgress('Ações',prog.values?.acoes||0,prog.metas?.acoes||0,formatProgressValue('acoes',prog.values?.acoes||0)+' / '+formatProgressValue('acoes',prog.metas?.acoes||0))}
+              ${personalProgress('Cursos',prog.values?.cursos||0,prog.metas?.cursos||0,formatProgressValue('cursos',prog.values?.cursos||0)+' / '+formatProgressValue('cursos',prog.metas?.cursos||0))}` : `
+              <div class="personal-official-status"><strong>✓ Piloto Oficial</strong><span>Não há metas do período probatório pendentes.</span></div>`}
           </section>
 
           <section class="personal-panel events-personal-panel">
