@@ -40,21 +40,25 @@ async function requireAdmin(req, res, next) {
   try {
     // Primeiro usa o papel presente no token para não quebrar sessões antigas.
     const tokenRole = String(req.user?.role || '').trim().toLowerCase();
-    if (['admin', 'comando'].includes(tokenRole)) {
-      req.user.role = tokenRole;
+    if (['admin', 'comando', 'administrador'].includes(tokenRole)) {
+      req.user.role = tokenRole === 'administrador' ? 'admin' : tokenRole;
       return next();
     }
 
-    // Para os demais casos, confirma o papel diretamente no PostgreSQL.
+    // Confirma no PostgreSQL. Contas antigas podem ter role=operador mesmo
+    // tendo sido criadas como Comando; nesse caso a patente Comando também
+    // representa a autoridade administrativa do portal.
     const { rows } = await pool.query(
-      `SELECT role FROM usuarios WHERE id=$1 AND ativo=true AND aprovado=true LIMIT 1`,
+      `SELECT role, patente FROM usuarios WHERE id=$1 AND ativo=true AND aprovado=true LIMIT 1`,
       [req.user?.id]
     );
     const role = String(rows[0]?.role || '').trim().toLowerCase();
-    if (!['admin', 'comando'].includes(role)) {
+    const patente = String(rows[0]?.patente || '').trim().toLowerCase();
+    const isAdmin = ['admin', 'comando', 'administrador'].includes(role) || patente === 'comando';
+    if (!isAdmin) {
       return res.status(403).json({ error: "Acesso restrito ao Comando/Admin." });
     }
-    req.user.role = role;
+    req.user.role = ['admin', 'comando', 'administrador'].includes(role) ? (role === 'administrador' ? 'admin' : role) : 'comando';
     next();
   } catch (error) {
     console.error('Falha ao validar permissão administrativa:', error);

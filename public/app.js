@@ -532,13 +532,14 @@ function efetivoGrupo(grupo, rows){
 
 function isCommandUser(){
   const role=String(currentUser?.role||'').trim().toLowerCase();
-  return ['admin','comando'].includes(role);
+  return ['admin','comando','administrador'].includes(role) || String(currentUser?.patente||'').trim().toLowerCase()==='comando';
 }
 
 async function refreshCurrentUser(){
   const data=await api('/api/auth/me');
   if(data?.user){
     currentUser={...currentUser,...data.user};
+    if (!['admin','comando','administrador'].includes(String(currentUser?.role||'').trim().toLowerCase()) && String(currentUser?.patente||'').trim().toLowerCase()==='comando') currentUser.role='comando';
     localStorage.setItem('gtm_user',JSON.stringify(currentUser));
   }
   return currentUser;
