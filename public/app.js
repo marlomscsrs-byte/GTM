@@ -113,7 +113,7 @@ async function loadPage(name){
     cursos:["Cursos","Treinamentos e certificações"],
     frota:["Frota","Motocicletas e manutenção"],
     manual:["Manual","Procedimentos operacionais"],
-    relatorios:["Relatórios","Estatísticas e indicadores"],
+    relatorios:["Registros","Histórico de QRUs e ações"],
     pessoal:["Pessoal","Seu perfil, desempenho e segurança"],
     progressao:["Progressão","Metas para Piloto Oficial"],
     admin:["Administração","Usuários, contas e configurações"]
@@ -126,6 +126,7 @@ async function loadPage(name){
   if(name==="acoes") return actionPage();
   if(name==="progressao") return progressaoPage();
   if(name==="admin") return adminPage();
+  if(name==="relatorios") return registrosPage();
   if(name==="pessoal") return pessoalPage();
   if(name==="manual") return manualPage();
   page.innerHTML=`<div class="page-head"><div><h1>${title}</h1><p>${sub}</p></div></div>
@@ -172,7 +173,7 @@ async function dashboard(){
           <div class="quick-grid">
             ${dashboardAction('▤','Nova QRU','Registrar ocorrência','ocorrencias')}
             ${dashboardAction('◇','Nova ação','Adicionar atividade','acoes')}
-            ${dashboardAction('♟','Ranking','Ver classificação','relatorios')}
+            ${dashboardAction('▤','Registros','Histórico operacional','relatorios')}
             ${dashboardAction('▥','Setor pessoal','Solicitações','pessoal')}
             ${dashboardAction('⚑','Avisos','Comunicados','comunicados')}
             ${dashboardAction('♙','Hierarquia','Estrutura da unidade','efetivo')}
@@ -975,15 +976,77 @@ async function submitQRU(){
   catch(e){alert(e.message);}
 }
 
-async function tablePage(title,sub,url,cols){
+async function registrosPage(){
   try{
-    const rows=await api(url);
-    page.innerHTML=`<div class="page-head"><div><h1>${title}</h1><p>${sub}</p></div><button class="btn">+ Novo registro</button></div>
-    <div class="section"><table class="table"><thead><tr>${cols.map(c=>`<th>${c.toUpperCase()}</th>`).join("")}</tr></thead><tbody>
-    ${rows.map(r=>`<tr>${cols.map(c=>`<td>${escapeHtml(r[c]??"—")}</td>`).join("")}</tr>`).join("")||`<tr><td colspan="${cols.length}">Nenhum registro encontrado.</td></tr>`}
-    </tbody></table></div>`;
-  }catch(e){page.innerHTML=`<div class="section"><h3>Não foi possível carregar</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`}
+    const rows=await api('/api/registros');
+    const canEdit=currentUser?.role==='admin';
+    page.innerHTML=`
+      <div class="page-head">
+        <div><span class="eyebrow">HISTÓRICO OPERACIONAL</span><h1>Histórico de Registros</h1><p>QRUs e Ações registradas no Portal GTM</p></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn" onclick="loadPage('ocorrencias')">+ Nova QRU</button>
+          <button class="btn secondary" onclick="loadPage('acoes')">+ Nova Ação</button>
+        </div>
+      </div>
+      <div class="section records-section">
+        <div class="records-toolbar">
+          <div class="record-filter-tabs"><button class="record-filter active" data-filter="todos" onclick="filterRecords('todos',this)">Todos</button><button class="record-filter" data-filter="QRU" onclick="filterRecords('QRU',this)">QRUs</button><button class="record-filter" data-filter="AÇÃO" onclick="filterRecords('AÇÃO',this)">Ações</button></div>
+          <input class="record-search" id="record-search" placeholder="Buscar por código, título, tipo ou autor..." oninput="filterRecordsText(this.value)">
+        </div>
+        <div class="table-wrap"><table class="table records-table"><thead><tr><th>CÓDIGO</th><th>TÍTULO</th><th>TIPO</th><th>DETALHES</th><th>PTS</th><th>AÇÕES</th></tr></thead><tbody id="records-body">
+          ${renderRecordRows(rows,canEdit)}
+        </tbody></table></div>
+      </div>`;
+    window.__gtmRecords=rows; window.__gtmRecordFilter='todos';
+  }catch(e){page.innerHTML=`<div class="section"><h3>Não foi possível carregar os registros</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`;}
 }
+
+function renderRecordRows(rows,canEdit){
+  if(!rows.length) return `<tr><td colspan="6" style="color:#718395">Nenhum registro encontrado.</td></tr>`;
+  return rows.map(r=>{
+    const tipo=r.registro_tipo||'QRU';
+    const codigo=r.protocolo||`ACAO-${String(r.id).padStart(5,'0')}`;
+    const detalhes=tipo==='QRU'?(r.local||'R.O'):(r.resultado||'Ação');
+    const pts=Number(r.pontos||0).toFixed(1);
+    return `<tr data-record-type="${escapeAttr(tipo)}" data-record-search="${escapeAttr([codigo,r.titulo,r.tipo,r.autor,r.local,r.resultado].filter(Boolean).join(' '))}">
+      <td><b class="record-code">${escapeHtml(codigo)}</b></td>
+      <td><strong>${escapeHtml(r.titulo||'Sem título')}</strong><small style="display:block;color:#718395">${escapeHtml(formatDateTime(r.created_at))}</small></td>
+      <td><span class="record-type-pill">${escapeHtml(tipo)}</span></td>
+      <td>${escapeHtml(detalhes||'—')}</td>
+      <td><b class="record-points">${pts}</b></td>
+      <td><div class="record-actions"><button class="mini-btn" onclick="viewRecord('${tipo}',${Number(r.id)})">◉ Ver</button>${canEdit?`<button class="mini-btn secondary-mini" onclick="editRecord('${tipo}',${Number(r.id)})">✎ Editar</button><button class="mini-btn danger-mini" onclick="deleteRecord('${tipo}',${Number(r.id)})">✕ Excluir</button>`:''}</div></td>
+    </tr>`;
+  }).join('');
+}
+function filterRecords(filter,btn){window.__gtmRecordFilter=filter;document.querySelectorAll('.record-filter').forEach(b=>b.classList.remove('active'));btn?.classList.add('active');applyRecordFilters();}
+function filterRecordsText(value){window.__gtmRecordSearch=value||'';applyRecordFilters();}
+function applyRecordFilters(){const rows=window.__gtmRecords||[];const filter=window.__gtmRecordFilter||'todos';const q=(window.__gtmRecordSearch||'').toLowerCase();const filtered=rows.filter(r=>(filter==='todos'||r.registro_tipo===filter)&&(!q||[r.protocolo,r.titulo,r.tipo,r.autor,r.local,r.resultado].filter(Boolean).join(' ').toLowerCase().includes(q)));const body=document.getElementById('records-body');if(body)body.innerHTML=renderRecordRows(filtered,currentUser?.role==='admin');}
+
+async function viewRecord(tipo,id){
+  try{
+    const r=await api(`/api/registros/${tipo}/${id}`);
+    const details=tipo==='QRU'?[
+      ['Código',r.protocolo],['Tipo',r.tipo],['Título',r.titulo],['Local',r.local],['Status',r.status],['Autor',r.autor],['Data',formatDateTime(r.created_at)]
+    ]:[['Código',`ACAO-${String(r.id).padStart(5,'0')}`],['Tipo',r.tipo],['Resultado',r.resultado],['Título',r.titulo],['Autor',r.autor],['Data',formatDateTime(r.created_at)]];
+    document.getElementById('record-view-modal')?.remove();document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="record-view-modal"><div class="modal-card record-modal-card"><button class="modal-close" onclick="document.getElementById('record-view-modal').remove()">×</button><span class="eyebrow">${escapeHtml(tipo)}</span><h2>${escapeHtml(r.titulo||'Registro')}</h2><div class="record-detail-grid">${details.map(([a,b])=>`<div><small>${escapeHtml(a)}</small><b>${escapeHtml(b??'—')}</b></div>`).join('')}</div><div class="record-detail-report"><small>${tipo==='QRU'?'RELATO':'DESCRIÇÃO / OBSERVAÇÕES'}</small><pre>${escapeHtml(tipo==='QRU'?(r.descricao||'—'):(r.descricao||'—'))}</pre></div>${r.foto_url?`<div class="record-photo"><img src="${escapeAttr(r.foto_url)}" alt="Imagem do registro"></div>`:''}<div class="record-modal-actions"><button class="btn secondary" onclick="document.getElementById('record-view-modal').remove()">Fechar</button>${currentUser?.role==='admin'?`<button class="btn" onclick="document.getElementById('record-view-modal').remove();editRecord('${tipo}',${Number(r.id)})">Editar</button>`:''}</div></div></div>`);
+  }catch(e){alert(e.message);}
+}
+
+async function editRecord(tipo,id){
+  if(currentUser?.role!=='admin'){alert('Acesso restrito ao Comando/Admin.');return;}
+  try{
+    const r=await api(`/api/registros/${tipo}/${id}`); document.getElementById('record-edit-modal')?.remove();
+    const isQ=tipo==='QRU';
+    document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="record-edit-modal"><div class="modal-card record-modal-card record-edit-card"><button class="modal-close" onclick="document.getElementById('record-edit-modal').remove()">×</button><span class="eyebrow">EDIÇÃO DO COMANDO</span><h2>Editar ${isQ?'QRU':'Ação'}</h2><form onsubmit="saveRecordEdit(event,'${tipo}',${Number(id)})">
+      <label>Tipo<input id="edit-record-tipo" value="${escapeAttr(r.tipo||'')}" required></label>
+      <label>Título<input id="edit-record-titulo" value="${escapeAttr(r.titulo||'')}" required></label>
+      ${isQ?`<label>Local<input id="edit-record-local" value="${escapeAttr(r.local||'')}"></label><label>Status<select id="edit-record-status"><option ${r.status==='Aberta'?'selected':''}>Aberta</option><option ${r.status==='Finalizada'?'selected':''}>Finalizada</option><option ${r.status==='Cancelada'?'selected':''}>Cancelada</option></select></label>`:`<label>Resultado<select id="edit-record-resultado"><option ${r.resultado==='Vitória'?'selected':''}>Vitória</option><option ${r.resultado==='Derrota'?'selected':''}>Derrota</option></select></label>`}
+      <label>${isQ?'Relato':'Descrição / Observações'}<textarea id="edit-record-descricao" rows="10">${escapeHtml(r.descricao||'')}</textarea></label>
+      <div class="record-edit-error" id="record-edit-error"></div><div class="record-modal-actions"><button class="btn secondary" type="button" onclick="document.getElementById('record-edit-modal').remove()">Cancelar</button><button class="btn" type="submit">Salvar alterações</button></div></form></div></div>`);
+  }catch(e){alert(e.message);}
+}
+async function saveRecordEdit(event,tipo,id){event.preventDefault();const body={tipo:document.getElementById('edit-record-tipo')?.value.trim(),titulo:document.getElementById('edit-record-titulo')?.value.trim(),descricao:document.getElementById('edit-record-descricao')?.value||''};if(tipo==='QRU'){body.local=document.getElementById('edit-record-local')?.value.trim()||'Villa';body.status=document.getElementById('edit-record-status')?.value||'Aberta';}else body.resultado=document.getElementById('edit-record-resultado')?.value||'Vitória';try{const d=await api(`/api/admin/registros/${tipo}/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});alert(d.message||'Registro atualizado.');document.getElementById('record-edit-modal')?.remove();await registrosPage();}catch(e){document.getElementById('record-edit-error').textContent=e.message;}}
+async function deleteRecord(tipo,id){if(currentUser?.role!=='admin'){alert('Acesso restrito ao Comando/Admin.');return;}if(!confirm('Excluir este registro? Esta ação não pode ser desfeita.'))return;try{const d=await api(`/api/admin/registros/${tipo}/${id}`,{method:'DELETE'});alert(d.message||'Registro excluído.');await registrosPage();}catch(e){alert(e.message);}}
 
 function escapeHtml(value){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function escapeAttr(value){return escapeHtml(value).replace(/`/g,'&#96;');}

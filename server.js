@@ -756,6 +756,84 @@ app.put("/api/pessoal", auth, async (req, res) => {
   } finally { client.release(); }
 });
 
+app.get("/api/registros", auth, async (_, res) => {
+  try {
+    const [qruQ, acaoQ] = await Promise.all([
+      pool.query(`SELECT o.id,o.protocolo,o.tipo,o.titulo,o.local,o.status,o.created_at,
+                         u.nome AS autor, 3.0::numeric AS pontos
+                  FROM ocorrencias o LEFT JOIN usuarios u ON u.id=o.criado_por
+                  ORDER BY o.created_at DESC LIMIT 100`),
+      pool.query(`SELECT a.id,a.tipo,a.titulo,a.resultado,a.created_at,
+                         u.nome AS autor,a.pontos
+                  FROM acoes a LEFT JOIN usuarios u ON u.id=a.usuario_id
+                  ORDER BY a.created_at DESC LIMIT 100`)
+    ]);
+    const rows=[
+      ...qruQ.rows.map(r=>({...r,registro_tipo:'QRU'})),
+      ...acaoQ.rows.map(r=>({...r,registro_tipo:'AÇÃO',protocolo:`ACAO-${String(r.id).padStart(5,'0')}`}))
+    ].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,100);
+    res.json(rows);
+  } catch(error) {
+    console.error(error);
+    res.status(500).json({error:'Não foi possível carregar o histórico de registros.'});
+  }
+});
+
+app.get("/api/registros/:tipo/:id", auth, async (req,res) => {
+  try {
+    const id=Number(req.params.id);
+    if(!Number.isInteger(id)) return res.status(400).json({error:'Registro inválido.'});
+    if(req.params.tipo==='QRU') {
+      const {rows}=await pool.query(`SELECT o.*,u.nome AS autor FROM ocorrencias o LEFT JOIN usuarios u ON u.id=o.criado_por WHERE o.id=$1`,[id]);
+      if(!rows[0]) return res.status(404).json({error:'QRU não encontrada.'});
+      return res.json(rows[0]);
+    }
+    if(req.params.tipo==='AÇÃO') {
+      const {rows}=await pool.query(`SELECT a.*,u.nome AS autor FROM acoes a LEFT JOIN usuarios u ON u.id=a.usuario_id WHERE a.id=$1`,[id]);
+      if(!rows[0]) return res.status(404).json({error:'Ação não encontrada.'});
+      return res.json(rows[0]);
+    }
+    res.status(400).json({error:'Tipo de registro inválido.'});
+  } catch(error) { console.error(error); res.status(500).json({error:'Não foi possível abrir o registro.'}); }
+});
+
+app.put("/api/admin/registros/:tipo/:id", auth, requireAdmin, async (req,res) => {
+  try {
+    const id=Number(req.params.id);
+    if(!Number.isInteger(id)) return res.status(400).json({error:'Registro inválido.'});
+    const {tipo,titulo,descricao}=req.body||{};
+    if(!tipo || !titulo) return res.status(400).json({error:'Tipo e título são obrigatórios.'});
+    if(req.params.tipo==='QRU') {
+      const {local='Villa',status='Aberta'}=req.body||{};
+      const result=await pool.query(`UPDATE ocorrencias SET tipo=$1,titulo=$2,descricao=$3,local=$4,status=$5 WHERE id=$6 RETURNING id,protocolo,tipo,titulo,descricao,local,status,created_at`,[String(tipo).trim(),String(titulo).trim(),String(descricao||''),String(local).trim()||'Villa',String(status).trim()||'Aberta',id]);
+      if(!result.rows[0]) return res.status(404).json({error:'QRU não encontrada.'});
+      await pool.query(`INSERT INTO logs (usuario_id,acao,entidade,entidade_id,detalhes) VALUES ($1,'EDITAR_REGISTRO','ocorrencias',$2,$3)`,[req.user.id,id,JSON.stringify({tipo,titulo})]);
+      return res.json({ok:true,message:'QRU atualizada com sucesso.',registro:result.rows[0]});
+    }
+    if(req.params.tipo==='AÇÃO') {
+      const {resultado='Vitória'}=req.body||{};
+      const result=await pool.query(`UPDATE acoes SET tipo=$1,titulo=$2,descricao=$3,resultado=$4 WHERE id=$5 RETURNING id,tipo,titulo,descricao,resultado,pontos,created_at`,[String(tipo).trim(),String(titulo).trim(),String(descricao||''),String(resultado).trim()||'Vitória',id]);
+      if(!result.rows[0]) return res.status(404).json({error:'Ação não encontrada.'});
+      await pool.query(`INSERT INTO logs (usuario_id,acao,entidade,entidade_id,detalhes) VALUES ($1,'EDITAR_REGISTRO','acoes',$2,$3)`,[req.user.id,id,JSON.stringify({tipo,titulo,resultado})]);
+      return res.json({ok:true,message:'Ação atualizada com sucesso.',registro:result.rows[0]});
+    }
+    res.status(400).json({error:'Tipo de registro inválido.'});
+  } catch(error) { console.error(error); res.status(500).json({error:'Não foi possível atualizar o registro.'}); }
+});
+
+app.delete("/api/admin/registros/:tipo/:id", auth, requireAdmin, async (req,res) => {
+  try {
+    const id=Number(req.params.id);
+    if(!Number.isInteger(id)) return res.status(400).json({error:'Registro inválido.'});
+    const table=req.params.tipo==='QRU'?'ocorrencias':req.params.tipo==='AÇÃO'?'acoes':null;
+    if(!table) return res.status(400).json({error:'Tipo de registro inválido.'});
+    const result=await pool.query(`DELETE FROM ${table} WHERE id=$1 RETURNING id`,[id]);
+    if(!result.rows[0]) return res.status(404).json({error:'Registro não encontrado.'});
+    await pool.query(`INSERT INTO logs (usuario_id,acao,entidade,entidade_id,detalhes) VALUES ($1,'EXCLUIR_REGISTRO',$2,$3,$4)`,[req.user.id,table,id,JSON.stringify({tipo:req.params.tipo})]);
+    res.json({ok:true,message:'Registro excluído com sucesso.'});
+  } catch(error) { console.error(error); res.status(500).json({error:'Não foi possível excluir o registro.'}); }
+});
+
 app.get("/api/ocorrencias", auth, async (_, res) => {
   const { rows } = await pool.query(
     `SELECT id, protocolo, tipo, titulo, local, status, created_at
