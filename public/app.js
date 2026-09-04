@@ -551,8 +551,8 @@ async function qruPage(){
         <div class="qru-selected-count" id="qru-selected-count">0 oficial(is) selecionado(s)</div>
       </section>
       <section class="qru-section qru-preview-section">
-        <div class="qru-section-title"><span>PRÉVIA DO RELATO</span><small>O texto será salvo junto com a ocorrência.</small></div>
-        <pre id="qru-preview" class="qru-preview"></pre>
+        <div class="qru-section-title"><span>PRÉVIA DO RELATO</span><small>Confira o relato completo antes de registrar a QRU.</small></div>
+        <textarea id="qru-preview" class="qru-preview" rows=14></textarea>
       </section>
       <div class="qru-bottom-actions"><button class="btn secondary" onclick="loadPage('dashboard')">Cancelar</button><button class="btn" onclick="submitQRU()">Registrar QRU</button></div>`;
     window.qruOfficers = officers; window.qruSelected = selected; window.qruPhotoUrl = photoUrl;
@@ -571,7 +571,8 @@ function selectedQRUType(){ return document.querySelector('.qru-type.selected')?
 function selectQRUType(btn){
   if(!btn)return;
   document.querySelectorAll('.qru-type').forEach(x=>x.classList.remove('selected')); btn.classList.add('selected');
-  const title=document.getElementById('qru-titulo'); if(title && !title.value) title.value=`QRU — ${btn.dataset.type}`;
+  const title=document.getElementById('qru-titulo');
+  if(title) title.value = btn.dataset.type;
   updateQRUPreview();
 }
 function renderQRUOfficers(rows, selected){
@@ -591,20 +592,33 @@ function previewQRUPhoto(input){
   const file=input.files?.[0]; if(!file)return; if(file.size>5*1024*1024){alert('A imagem deve ter no máximo 5 MB.');input.value='';return;}
   const reader=new FileReader(); reader.onload=()=>{ window.qruPhotoData=reader.result; document.getElementById('qru-photo-preview').innerHTML=`<img src="${reader.result}" alt="Foto do QRU">`; }; reader.readAsDataURL(file);
 }
-function updateQRUPreview(){
-  const type=selectedQRUType(); const departamento=document.getElementById('qru-departamento')?.value||'1° Departamento de Polícia Militar - Villa (1° BPM - Villa)';
-  const detidos=document.getElementById('qru-detidos')?.value.trim()||'Não informado';
-  const itens=document.getElementById('qru-itens')?.value.trim()||'Nenhum item informado';
-  const veiculo=document.getElementById('qru-veiculo')?.value.trim()||'Não informado';
-  const passaporte=document.getElementById('qru-passaporte')?.value.trim(); const obs=document.getElementById('qru-obs')?.value.trim()||'O detido e os materiais apreendidos foram encaminhados à autoridade competente para a adoção das providências legais cabíveis.';
+function buildQRUReport(){
+  const type=selectedQRUType();
+  const departamento=document.getElementById('qru-departamento')?.value.trim()||'1° Departamento de Polícia Militar - Villa (1° BPM - Villa)';
+  const detidos=document.getElementById('qru-detidos')?.value.trim()||'Não informado.';
+  const itens=document.getElementById('qru-itens')?.value.trim()||'Nenhum item informado.';
+  const veiculo=document.getElementById('qru-veiculo')?.value.trim()||'Não informado.';
+  const passaporte=document.getElementById('qru-passaporte')?.value.trim();
+  const obs=document.getElementById('qru-obs')?.value.trim()||'O detido e os materiais apreendidos foram encaminhados à autoridade competente para a adoção das providências legais cabíveis. A ocorrência foi finalizada com êxito pelas equipes policiais.';
   const oficiais=(window.qruSelected||[]).map(x=>`• ${x.nome} (ID ${x.matricula||'—'})`).join('\n')||'• Não informado.';
-  const relato=`🎖️ ${departamento} 🎖️\n\n📋 Relato:\nApós o acionamento das equipes policiais para atendimento da ocorrência, foi iniciado acompanhamento e atendimento operacional referente à ${type.toLowerCase()}. Durante a intervenção, as equipes mantiveram comunicação operacional contínua e adotaram os procedimentos necessários para preservar a segurança da população e dos agentes envolvidos. A ocorrência foi conduzida de forma coordenada e encerrada conforme os procedimentos operacionais.\n\n🕵️ Detidos:\n• ${detidos}${passaporte?`\n• Passaporte: ${passaporte}`:''}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n👮 Oficiais Envolvidos:\n${oficiais}\n\n🔍 Observações:\n${obs}`;
-  const el=document.getElementById('qru-preview'); if(el)el.textContent=relato;
+
+  // Modelo fornecido pelo usuário para Fuga de Abordagem.
+  if(type==='Fuga de Abordagem'){
+    return `🎖️ ${departamento} 🎖️\n\n📋 Relato:\nApós o acionamento das equipes policiais para atendimento da ocorrência, foi iniciado acompanhamento tático ao veículo suspeito. Durante a intervenção, o indivíduo envolvido na ocorrência desobedeceu às ordens legais de parada e empreendeu fuga, transitando por diferentes vias e expondo terceiros a risco.\n\nAs equipes mantiveram comunicação operacional contínua, realizaram o acompanhamento de forma coordenada e adotaram os procedimentos necessários para preservar a segurança da população e dos agentes envolvidos. Após o cerco e a contenção do veículo, a Polícia obteve êxito na abordagem e na prisão do indivíduo, encerrando a ocorrência sem novas intercorrências.\n\n🕵️ Detidos:\n• ${detidos}${passaporte?`\n• Passaporte: ${passaporte}`:''}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n👮 Oficiais Envolvidos:\n${oficiais}\n\n🔍 Observações:\n${obs}`;
+  }
+
+  // Para os demais tipos, mantém a mesma estrutura, sem inventar um texto específico.
+  return `🎖️ ${departamento} 🎖️\n\n📋 Relato:\nRegistro de ocorrência do tipo ${type}. Preencha e confira este campo antes de registrar a QRU.\n\n🕵️ Detidos:\n• ${detidos}${passaporte?`\n• Passaporte: ${passaporte}`:''}\n\n🔫 Itens Apreendidos:\n• ${itens}\n\n🚗 Modelo do veículo:\n• ${veiculo}\n\n👮 Oficiais Envolvidos:\n${oficiais}\n\n🔍 Observações:\n${obs}`;
+}
+
+function updateQRUPreview(){
+  const el=document.getElementById('qru-preview');
+  if(el) el.value=buildQRUReport();
 }
 async function submitQRU(){
   const selected=window.qruSelected||[]; if(!selected.length){alert('Selecione pelo menos um oficial envolvido.');return;}
   const titulo=document.getElementById('qru-titulo')?.value.trim()||`QRU — ${selectedQRUType()}`;
-  const payload={tipo:selectedQRUType(),titulo,local:'Villa',dados:{departamento:document.getElementById('qru-departamento')?.value||'',veiculo:document.getElementById('qru-veiculo')?.value||'',itens:document.getElementById('qru-itens')?.value||'',passaporte:document.getElementById('qru-passaporte')?.value||'',detidos:document.getElementById('qru-detidos')?.value||'',observacoes:document.getElementById('qru-obs')?.value||'',oficiais:selected.map(x=>({id:x.id,nome:x.nome,matricula:x.matricula,patente:x.patente})),foto_url:document.getElementById('qru-foto')?.value||'',foto_data:window.qruPhotoData||''},descricao:document.getElementById('qru-preview')?.textContent||''};
+  const payload={tipo:selectedQRUType(),titulo,local:'Villa',dados:{departamento:document.getElementById('qru-departamento')?.value||'',veiculo:document.getElementById('qru-veiculo')?.value||'',itens:document.getElementById('qru-itens')?.value||'',passaporte:document.getElementById('qru-passaporte')?.value||'',detidos:document.getElementById('qru-detidos')?.value||'',observacoes:document.getElementById('qru-obs')?.value||'',oficiais:selected.map(x=>({id:x.id,nome:x.nome,matricula:x.matricula,patente:x.patente})),foto_url:document.getElementById('qru-foto')?.value||'',foto_data:window.qruPhotoData||''},descricao:document.getElementById('qru-preview')?.value||''};
   try{ const r=await api('/api/ocorrencias',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); alert(`QRU ${r.protocolo} registrada com sucesso.`); loadPage('ocorrencias'); }
   catch(e){alert(e.message);}
 }
