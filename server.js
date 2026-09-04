@@ -200,11 +200,13 @@ app.get("/api/ponto/status", auth, async (req, res) => {
         WHERE ps.usuario_id=$1 AND ps.status='em_servico'
         ORDER BY ps.entrada DESC LIMIT 1`, [req.user.id]),
       pool.query(`
-        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(saida, now()) - entrada))/3600.0),0) AS horas
+        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(saida, now()) - entrada))/3600.0),0) AS horas,
+               COUNT(*)::int AS turnos
         FROM pontos_servico
         WHERE usuario_id=$1 AND entrada >= date_trunc('week', now())`, [req.user.id]),
       pool.query(`
-        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(saida, now()) - entrada))/3600.0),0) AS horas
+        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(saida, now()) - entrada))/3600.0),0) AS horas,
+               COUNT(*)::int AS turnos
         FROM pontos_servico
         WHERE usuario_id=$1`, [req.user.id]),
       pool.query(`
@@ -218,8 +220,8 @@ app.get("/api/ponto/status", auth, async (req, res) => {
     const totalHours = Number(total.rows[0].horas || 0);
     res.json({
       current: current.rows[0] || null,
-      week: { hours: weekHours, points: Number(weekHours.toFixed(1)) },
-      total: { hours: totalHours, points: Number(totalHours.toFixed(1)) },
+      week: { hours: weekHours, points: Number(weekHours.toFixed(1)), turns: Number(week.rows[0].turnos || 0) },
+      total: { hours: totalHours, points: Number(totalHours.toFixed(1)), turns: Number(total.rows[0].turnos || 0) },
       team: team.rows
     });
   } catch (error) {

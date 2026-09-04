@@ -208,21 +208,72 @@ async function toggleService(){
 
 async function servicePage(){
   try{
-    const p=await api('/api/ponto/status');
-    const h=await api('/api/ponto/historico');
+    const [p,h]=await Promise.all([
+      api('/api/ponto/status'),
+      api('/api/ponto/historico')
+    ]);
     const active=!!p.current;
+    const weekHours=Number(p.week?.hours||0);
+    const totalHours=Number(p.total?.hours||0);
+    const weekTurns=Number(p.week?.turns||0);
+    const totalTurns=Number(p.total?.turns||h.length||0);
+    const displayTeam=Array.isArray(p.team)?p.team:[];
     page.innerHTML=`
-      <div class="page-head"><div><h1>Meu serviço</h1><p>Bater ponto, acompanhar o serviço atual e consultar o histórico.</p></div><button class="btn ${active?'btn-danger':''}" onclick="toggleService()">${active?'Encerrar serviço':'Iniciar serviço'}</button></div>
-      <div class="service-overview">
-        <div class="service-card ${active?'current-on':''}"><span class="eyebrow">STATUS ATUAL</span><strong>${active?'EM SERVIÇO':'FORA DE SERVIÇO'}</strong><small>${active?`Entrada às ${formatTime(p.current.entrada)} • ${formatDurationFrom(p.current.entrada)}`:'Nenhum ponto em aberto.'}</small></div>
-        <div class="service-card"><span class="eyebrow">SEMANA</span><strong>${formatHours(p.week?.hours||0)}</strong><small>${Number(p.week?.points||0).toFixed(1)} pontos</small></div>
-        <div class="service-card"><span class="eyebrow">TOTAL</span><strong>${formatHours(p.total?.hours||0)}</strong><small>${Number(p.total?.points||0).toFixed(1)} pontos</small></div>
-      </div>
-      <section class="section"><div class="section-title-row"><div><h3>Histórico de serviço</h3><p class="section-sub">Cada hora registrada vale 1 ponto para os indicadores de desempenho.</p></div></div>
-      <div class="table-wrap"><table class="table"><thead><tr><th>ENTRADA</th><th>SAÍDA</th><th>DURAÇÃO</th><th>PONTOS</th><th>STATUS</th></tr></thead><tbody>
-      ${h.map(r=>`<tr><td>${formatDateTime(r.entrada)}</td><td>${r.saida?formatDateTime(r.saida):'—'}</td><td>${formatHours(Number(r.horas||0))}</td><td>${Number(r.pontos||0).toFixed(1)}</td><td><span class="status ${r.status==='em_servico'?'status-active':'status-inactive'}">${r.status==='em_servico'?'EM SERVIÇO':'ENCERRADO'}</span></td></tr>`).join('')||`<tr><td colspan="5">Nenhum serviço registrado.</td></tr>`}
-      </tbody></table></div></section>`;
-  }catch(e){ page.innerHTML=`<div class="section"><h3>Não foi possível carregar o ponto</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`; }
+      <div class="service-page">
+        <section class="service-hero ${active?'service-hero-active':''}">
+          <div class="service-hero-copy">
+            <span class="eyebrow">CONTROLE DE TURNO</span>
+            <h1>${active?'Serviço em andamento':'Pronto para iniciar?'}</h1>
+            <p>${active?`Ponto iniciado às ${formatTime(p.current.entrada)} • ${formatDurationFrom(p.current.entrada)} em serviço.`:'Inicie o ponto para registrar oficialmente seu período de serviço.'}</p>
+          </div>
+          <button class="service-main-button ${active?'service-stop':''}" onclick="toggleService()">${active?'■ Encerrar serviço':'↪ Iniciar serviço'}</button>
+        </section>
+
+        <section class="service-kpis">
+          <div class="service-kpi"><div class="kpi-icon">●</div><div><small>Em serviço agora</small><b>${displayTeam.length || (active?1:0)}</b></div></div>
+          <div class="service-kpi"><div class="kpi-icon">◷</div><div><small>Minha semana</small><b>${formatHours(weekHours)}</b></div></div>
+          <div class="service-kpi"><div class="kpi-icon">↪</div><div><small>Turnos na semana</small><b>${weekTurns}</b></div></div>
+          <div class="service-kpi"><div class="kpi-icon">▦</div><div><small>Histórico total</small><b>${totalTurns}</b></div></div>
+        </section>
+
+        <section class="service-columns">
+          <div class="service-live-panel">
+            <div class="service-panel-head"><div><span class="eyebrow">AO VIVO</span><h2>Oficiais em serviço</h2></div><span class="service-count">${displayTeam.length || (active?1:0)}</span></div>
+            <div class="service-live-list">
+              ${displayTeam.length ? displayTeam.map(r=>`
+                <div class="service-person">
+                  <div class="service-person-avatar">${escapeHtml((r.nome||'?').charAt(0).toUpperCase())}</div>
+                  <div class="service-person-info"><b>${escapeHtml(r.nome||'Integrante')}</b><small>${escapeHtml(r.patente||'GTM')} • ID ${escapeHtml(r.matricula||'—')}</small></div>
+                  <div class="service-person-status"><span>● Em serviço</span><small>${formatTime(r.entrada)}</small></div>
+                </div>`).join('') : `<div class="service-empty-large"><div class="service-empty-icon">◷</div><div><b>Nenhum oficial em serviço</b><small>Quando um integrante iniciar o ponto, ele aparecerá aqui.</small></div></div>`}
+            </div>
+          </div>
+
+          <div class="service-history-panel">
+            <div class="service-panel-head"><div><span class="eyebrow">HISTÓRICO</span><h2>Meus turnos</h2></div><span class="service-count">${totalTurns}</span></div>
+            <div class="service-history-list">
+              ${h.slice(0,12).map(r=>`<div class="service-history-item">
+                <span class="history-dot"></span>
+                <div class="history-main"><b>${formatLongDate(r.entrada)}</b><small>${formatTime(r.entrada)} → ${r.saida?formatTime(r.saida):'em andamento'}</small></div>
+                <strong>${formatHours(Number(r.horas||0))}</strong>
+                <span class="history-status ${r.status==='em_servico'?'history-live':'history-done'}">${r.status==='em_servico'?'Em serviço':'Concluído'}</span>
+              </div>`).join('') || `<div class="service-empty-large"><div class="service-empty-icon">▦</div><div><b>Nenhum turno registrado</b><small>Seu histórico aparecerá aqui após o primeiro ponto.</small></div></div>`}
+            </div>
+          </div>
+        </section>
+
+        <section class="service-total-bar">
+          <div><span class="eyebrow">MEU DESEMPENHO</span><b>${formatHours(totalHours)}</b><small>horas registradas no histórico</small></div>
+          <div><b>${Number(p.total?.points||0).toFixed(1)}</b><small>pontos acumulados</small></div>
+          <div><b>${Number(p.week?.points||0).toFixed(1)}</b><small>pontos nesta semana</small></div>
+        </section>
+      </div>`;
+  }catch(e){ page.innerHTML=`<div class="section"><h3>Não foi possível carregar o serviço</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`; }
+}
+
+function formatLongDate(value){
+  if(!value) return '—';
+  return new Date(value).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}).replace('.',' de');
 }
 
 function formatHours(hours){
