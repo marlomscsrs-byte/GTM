@@ -915,6 +915,44 @@ app.delete("/api/admin/registros/:tipo/:id", auth, requireAdmin, async (req,res)
   } catch(error) { console.error(error); res.status(500).json({error:'Não foi possível excluir o registro.'}); }
 });
 
+app.get("/api/comunicados", auth, async (_, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT c.id, c.titulo, c.mensagem, c.prioridade, c.publicado, c.created_at,
+             COALESCE(u.nome, 'Comando') AS autor
+      FROM comunicados c
+      LEFT JOIN usuarios u ON u.id=c.autor
+      WHERE c.publicado=true
+      ORDER BY c.created_at DESC
+      LIMIT 100
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({error:'Não foi possível carregar os comunicados.'});
+  }
+});
+
+app.post("/api/comunicados", auth, requireAdmin, async (req, res) => {
+  try {
+    const titulo=String(req.body?.titulo||'').trim();
+    const mensagem=String(req.body?.mensagem||'').trim();
+    const prioridade=String(req.body?.prioridade||'Normal').trim();
+    if(!titulo || !mensagem) return res.status(400).json({error:'Título e mensagem são obrigatórios.'});
+    if(titulo.length>180 || mensagem.length>5000) return res.status(400).json({error:'O comunicado excede o limite permitido.'});
+    if(!['Normal','Importante','Urgente'].includes(prioridade)) return res.status(400).json({error:'Prioridade inválida.'});
+    const {rows}=await pool.query(
+      `INSERT INTO comunicados (titulo,mensagem,prioridade,autor,publicado) VALUES ($1,$2,$3,$4,true) RETURNING id,titulo,mensagem,prioridade,publicado,created_at`,
+      [titulo,mensagem,prioridade,req.user.id]
+    );
+    await pool.query(`INSERT INTO logs (usuario_id,acao,entidade,entidade_id,detalhes) VALUES ($1,'CRIAR_COMUNICADO','comunicados',$2,$3)`,[req.user.id,rows[0].id,JSON.stringify({titulo,prioridade})]);
+    res.status(201).json({ok:true,message:'Comunicado publicado com sucesso.',comunicado:rows[0]});
+  } catch(error) {
+    console.error(error);
+    res.status(500).json({error:'Não foi possível publicar o comunicado.'});
+  }
+});
+
 app.get("/api/ocorrencias", auth, async (_, res) => {
   const { rows } = await pool.query(
     `SELECT id, protocolo, tipo, titulo, local, status, created_at

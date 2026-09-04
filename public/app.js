@@ -140,7 +140,8 @@ async function loadPage(name){
     relatorios:["Registros","Histórico de QRUs e ações"],
     pessoal:["Pessoal","Seu perfil, desempenho e segurança"],
     progressao:["Progressão","Metas para Piloto Oficial"],
-    admin:["Administração","Usuários, contas e configurações"]
+    admin:["Administração","Usuários, contas e configurações"],
+    comunicados:["Comunicados","Avisos da unidade"]
   };
   const [title,sub]=titles[name]||titles.dashboard;
   if(name==="dashboard") return dashboard();
@@ -150,6 +151,7 @@ async function loadPage(name){
   if(name==="acoes") return actionPage();
   if(name==="progressao") return progressaoPage();
   if(name==="admin") return adminPage();
+  if(name==="comunicados") return comunicadosPage();
   if(name==="relatorios") return registrosPage();
   if(name==="pessoal") return pessoalPage();
   if(name==="manual") return manualPage();
@@ -735,6 +737,70 @@ function formatProgressValue(key,value,unit){
   if(key==='horas') return `${n.toFixed(n%1?1:0)}${unit}`;
   if(key==='pontos') return `${n.toFixed(n%1?1:0)} ${unit}`.trim();
   return `${Math.round(n)}${unit?' '+unit:''}`;
+}
+
+async function comunicadosPage(){
+  try{
+    const comunicados=await api('/api/comunicados');
+    const canCreate=isCommandUser();
+    page.innerHTML=`
+      <div class="page-head">
+        <div><h1>Comunicados</h1><p>Avisos e informações oficiais da unidade.</p></div>
+        ${canCreate?'<button class="primary" onclick="openComunicadoModal()">+ Novo comunicado</button>':''}
+      </div>
+      <div class="section">
+        <div class="section-title-row">
+          <div><h3>COMUNICADOS DA UNIDADE</h3><p class="section-sub">Os comunicados publicados ficam disponíveis para todo o efetivo.</p></div>
+          <span class="pill">${comunicados.length} ${comunicados.length===1?'comunicado':'comunicados'}</span>
+        </div>
+        ${comunicados.length?`<div class="communications-list">${comunicados.map(c=>`
+          <article class="communication-card">
+            <div class="communication-head">
+              <div><span class="eyebrow">${escapeHtml(c.prioridade||'Normal')}</span><h2>${escapeHtml(c.titulo)}</h2></div>
+              <small>${formatDateTime(c.created_at)}</small>
+            </div>
+            <div class="communication-message">${escapeHtml(c.mensagem).replace(/\n/g,'<br>')}</div>
+            <div class="communication-author">Publicado por ${escapeHtml(c.autor||'Comando')}</div>
+          </article>`).join('')}</div>`:
+          `<div class="empty-state"><b>Nenhum comunicado publicado</b><span>${canCreate?'Clique em “Novo comunicado” para publicar o primeiro aviso.':'Quando o Comando publicar um comunicado, ele aparecerá aqui.'}</span></div>`}
+      </div>`;
+  }catch(e){
+    page.innerHTML=`<div class="section"><h3>Não foi possível carregar os comunicados</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`;
+  }
+}
+
+function openComunicadoModal(){
+  document.getElementById('comunicado-modal')?.remove();
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="comunicado-modal">
+    <div class="modal-card comunicado-modal-card">
+      <button class="modal-close" type="button" onclick="document.getElementById('comunicado-modal')?.remove()">×</button>
+      <span class="eyebrow">CENTRAL GTM</span>
+      <h2>Novo comunicado</h2>
+      <p class="muted">Publique um aviso para todo o efetivo.</p>
+      <form onsubmit="saveComunicado(event)">
+        <label class="approval-label">Título<input id="comunicado-titulo" maxlength="180" required placeholder="Título do comunicado"></label>
+        <label class="approval-label">Prioridade<select id="comunicado-prioridade"><option>Normal</option><option>Importante</option><option>Urgente</option></select></label>
+        <label class="approval-label">Mensagem<textarea id="comunicado-mensagem" maxlength="5000" required rows="8" placeholder="Escreva o comunicado..."></textarea></label>
+        <div id="comunicado-error" class="form-error"></div>
+        <div class="approval-modal-actions"><button class="btn secondary" type="button" onclick="document.getElementById('comunicado-modal')?.remove()">Cancelar</button><button class="btn" type="submit">Publicar comunicado</button></div>
+      </form>
+    </div>
+  </div>`);
+}
+
+async function saveComunicado(event){
+  event.preventDefault();
+  const error=document.getElementById('comunicado-error'); if(error) error.textContent='';
+  try{
+    const data=await api('/api/comunicados',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      titulo:document.getElementById('comunicado-titulo')?.value.trim(),
+      prioridade:document.getElementById('comunicado-prioridade')?.value,
+      mensagem:document.getElementById('comunicado-mensagem')?.value.trim()
+    })});
+    document.getElementById('comunicado-modal')?.remove();
+    alert(data.message||'Comunicado publicado.');
+    await comunicadosPage();
+  }catch(e){ if(error) error.textContent=e.message; else alert(e.message); }
 }
 
 function manualPage(){
