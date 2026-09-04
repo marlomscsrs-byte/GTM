@@ -202,3 +202,170 @@ body{background:var(--gtm-black);color:var(--gtm-white)}
 .communication-head h2{margin:5px 0 0;font-size:18px;color:#f2f4f6}.communication-head small{color:#718395;font-size:11px;white-space:nowrap}
 .communication-message{font-size:14px;line-height:1.7;color:#c6d0da;white-space:normal}.communication-author{margin-top:16px;font-size:11px;color:#718395}
 .communications-list{display:flex;flex-direction:column;gap:12px}.comunicado-modal-card{width:min(680px,calc(100vw - 40px));max-width:680px}
+
+/* ============================================================
+   GTM v39 — IDENTIDADE VISUAL DEFINITIVA
+   Conceito: Central Tática / premium operacional
+   Preto + grafite + dourado. Sem roxo/azul como cor de marca.
+   ============================================================ */
+:root{
+  --gtm-black:#070809;
+  --gtm-black-2:#0b0d0f;
+  --gtm-panel:#101315;
+  --gtm-panel-2:#15181b;
+  --gtm-panel-3:#191d20;
+  --gtm-line:#292d31;
+  --gtm-line-soft:#202428;
+  --gtm-gray:#858b91;
+  --gtm-gray-light:#c6c9cc;
+  --gtm-white:#f2f2f0;
+  --gtm-gold:#c9a44a;
+  --gtm-gold-2:#e0bd62;
+  --gtm-gold-dark:#7d6327;
+  --gtm-gold-soft:rgba(201,164,74,.10);
+}
+html{background:#070809}
+body{background:#070809!important;color:var(--gtm-white)!important;font-family:Inter,Segoe UI,Arial,sans-serif}
+
+/* Login */
+.login{background:radial-gradient(circle at 50% 18%,#191814 0,#0a0b0c 34%,#050607 78%,#030405 100%)!important}
+.login:after{background:linear-gradient(115deg,transparent,rgba(201,164,74,.035),transparent)!important}
+.login-brand{left:30px;top:26px}
+.login-brand b{letter-spacing:2.4px;color:#f0f0ee}
+.login-brand small{color:#77736a}
+.login-card{background:rgba(13,15,16,.96)!important;border-color:#363330!important;border-radius:14px!important;box-shadow:0 28px 100px rgba(0,0,0,.72)!important}
+.login-logo{filter:drop-shadow(0 4px 15px rgba(0,0,0,.4))}
+.login-card h1 i{color:var(--gtm-gold)!important}
+.login-card>p{color:#8b8b87!important}
+.login-card input{background:#090b0c!important;border-color:#303337!important}
+.login-card input:focus{border-color:var(--gtm-gold)!important;box-shadow:0 0 0 2px rgba(201,164,74,.08)}
+.login-card form button{background:linear-gradient(100deg,#b38b31,#d1ad50)!important;color:#111!important;border:1px solid #e0bd62!important}
+.login-card form .secondary-login{background:#161819!important;color:#c8c9c8!important;border:1px solid #383a3c!important}
+.approval-info{background:rgba(201,164,74,.045)!important;border-color:rgba(201,164,74,.20)!important}
+.approval-info>span{color:var(--gtm-gold)!important}
+
+/* Shell / sidebar */
+.app aside{width:238px!important;background:#080909!important;border-right:1px solid #242628!important;padding:18px 10px!important}
+.aside-brand{padding:4px 10px 24px!important;border-bottom:1px solid #202224;margin-bottom:13px}
+.aside-brand img{width:45px!important;height:45px!important}
+.aside-brand b{font-size:14px!important;letter-spacing:1.6px!important;color:#efefed!important}
+.aside-brand small{font-size:7px!important;letter-spacing:1.1px;color:#74726d!important;text-transform:uppercase}
+.app nav{gap:2px!important}
+.nav-section-label{margin:15px 9px 5px!important;color:#77746d!important;font-size:8px!important;letter-spacing:1.8px!important}
+.app nav button{min-height:42px!important;padding:9px 11px!important;border-radius:8px!important;color:#8c8f91!important;position:relative;transition:.16s!important}
+.app nav button:hover{background:#121415!important;color:#e4e4e2!important}
+.app nav button.active{background:#191a1a!important;color:#f5f4f0!important;box-shadow:none!important}
+.app nav button.active:before{content:""!important;position:absolute!important;left:0!important;top:7px!important;bottom:7px!important;width:2px!important;background:var(--gtm-gold)!important;border-radius:0 2px 2px 0!important}
+.app nav button>span{font-size:10px!important}
+.app nav button small{font-size:7px!important;color:#686b6d!important}
+.nav-icon,.app nav button.active .nav-icon{color:#8a8b89!important}
+.app nav button.active .nav-icon{color:var(--gtm-gold)!important}
+.motto{padding:14px 12px!important;color:#5f605e!important;font-size:10px!important;letter-spacing:.5px!important}
+.motto small{color:#77736a!important;font-size:7px!important}
+.logout{border-top-color:#242628!important;color:#747674!important}
+
+/* Header */
+.app header{height:68px!important;background:#090a0b!important;border-bottom:1px solid #242628!important;padding:0 25px!important}
+.header-title{font-size:9px!important;letter-spacing:2px!important;color:#9a978f!important}
+.search{background:#101213!important;border-color:#2b2e30!important;color:#777a7b!important;border-radius:8px!important}
+.header-alert{color:#8a8881!important}
+.profile>span{color:var(--gtm-gold)!important}
+.profile b{color:#eee!important}.profile small{color:#747674!important}
+
+/* Base page / panels */
+#page{padding:24px 25px 42px!important}
+.section,.quick-panel,.side-panel,.status-panel,.profile-panel,.dashboard-events-panel,.dashboard-records-panel,.progress-section,.gtm-command-goals,.gtm-career-structure,.gtm-command-observations,.action-section,.records-section,.communication-card{background:#0f1113!important;border-color:#292d30!important;border-radius:14px!important;box-shadow:0 10px 30px rgba(0,0,0,.10)!important}
+.section h3,.panel-heading h2,.page-head h1{color:#ececea!important}
+.eyebrow,.nav-section-label{color:#8b887f!important}
+.page-head p,.section-sub,.section p,.muted{color:#777a7a!important}
+
+/* Buttons / controls */
+.btn{background:var(--gtm-gold)!important;color:#10100e!important;border:1px solid #e0bd62!important;border-radius:8px!important}
+.btn:hover{background:var(--gtm-gold-2)!important;filter:none!important}
+.btn.secondary,.outline-btn,.secondary-mini{background:#161819!important;border-color:#383b3d!important;color:#c7c8c6!important}
+.btn.secondary:hover,.outline-btn:hover{border-color:var(--gtm-gold)!important;color:var(--gtm-gold)!important}
+.mini-btn{background:#171512!important;border-color:#625026!important;color:#d7b65e!important}
+
+/* Dashboard — assinatura GTM */
+.dashboard-hero{min-height:158px!important;background:linear-gradient(105deg,#111314 0%,#151719 62%,#1b1811 100%)!important;border-color:#373635!important;border-radius:16px!important}
+.dashboard-hero:after{content:"GTM"!important;color:#fff!important;opacity:.018!important}
+.hero-copy .over{color:#9b968b!important}
+.hero-copy h1{color:#f3f3f0!important}
+.hero-copy p{color:#989996!important}
+.hero-copy small{color:#777a78!important}
+.hero-metric{background:#0b0d0e!important;border-color:#303336!important}
+.hero-metric b{color:var(--gtm-gold)!important}
+.service-button,.service-main-button{background:var(--gtm-gold)!important;color:#111!important;box-shadow:0 8px 24px rgba(201,164,74,.10)!important}
+.quick-grid{gap:10px!important}
+.dashboard-action{background:#121516!important;border-color:#2a2d2f!important;border-radius:12px!important}
+.dashboard-action:hover{background:#171919!important;border-color:#4a4640!important}
+.dash-icon{background:#191a1a!important;border-color:#343535!important;color:var(--gtm-gold)!important}
+.rank-row{background:#121516!important;border-color:#292d30!important}
+.rank-row>strong{color:var(--gtm-gold)!important}
+.live-dot{color:var(--gtm-gold)!important;border-color:rgba(201,164,74,.30)!important;background:rgba(201,164,74,.05)!important}
+.team-service-row{background:#121516!important;border-color:#2b2e30!important}
+.team-service-row>span{color:var(--gtm-gold)!important}.team-service-row>span i{background:var(--gtm-gold)!important}
+.team-avatar{background:#1a1b1c!important;border-color:#383838!important;color:var(--gtm-gold)!important}
+.dashboard-section-heading h2{color:#e9e9e7!important}.dashboard-section-heading p{color:#777a79!important}
+.record-code{color:#d1ad50!important}.record-points{color:var(--gtm-gold)!important}.record-row em,.record-type-pill{border-color:#67542a!important;background:#17140d!important;color:#d7b65e!important}
+.event-date b{color:var(--gtm-gold)!important}.event-confirm{border-color:#67542a!important;background:#17140d!important;color:#d7b65e!important}
+
+/* Forms */
+input,textarea,select{background:#0a0c0d!important;border-color:#303438!important;color:#ececea!important}
+input:focus,textarea:focus,select:focus{border-color:var(--gtm-gold)!important;box-shadow:0 0 0 2px rgba(201,164,74,.06)!important}
+
+/* QRU */
+.qru-type{background:#090b0c!important;border-color:#2b2e30!important;color:#818482!important}
+.qru-type:hover,.qru-type.selected{border-color:var(--gtm-gold)!important;background:#19160f!important;color:#eee7d5!important;box-shadow:0 0 0 1px rgba(201,164,74,.12)!important}
+.qru-upload{background:#4b4d4d!important}.qru-chip{background:#18150d!important;border-color:#5d4b22!important;color:#dec27a!important}.qru-selected-count{background:#18150d!important;color:#d6b55d!important}
+.qru-preview{background:#090b0c!important;border-color:#303438!important}.qru-preview:focus{border-color:var(--gtm-gold)!important}
+
+/* Ações */
+.action-type{background:#090b0c!important;border-color:#2b2e30!important;color:#818482!important}
+.action-type:hover,.action-type.selected{border-color:var(--gtm-gold)!important;background:#19160f!important;color:#eee7d5!important}
+.action-result{background:#141718!important;border-color:#303438!important;color:#c1c3c2!important}
+.action-result:hover,.action-result.selected{border-color:var(--gtm-gold)!important;background:#19160f!important;color:#eee7d5!important}
+.action-add{background:#17140d!important;border-color:#67542a!important;color:#d7b65e!important}
+.action-chip{background:#18150d!important;border-color:#5d4b22!important;color:#dec27a!important}
+.action-selected-count{background:#18150d!important;color:#d1b46a!important}
+
+/* Efetivo / Comando */
+.efetivo-kpis span{background:#121415!important;border-color:#343638!important;color:#b7b8b6!important}
+.efetivo-note b{color:var(--gtm-gold)!important}.group-title{background:#121415!important;border-color:#292d30!important}.group-title h3{color:#e1e1de!important}
+.status-active{background:#132019!important;color:#75c69a!important}.status-inactive{background:#241719!important;color:#df777e!important}
+.admin-banner{background:#111416!important;border-color:#343638!important}.admin-banner b{color:#eee!important}
+.pending-badge{background:rgba(201,164,74,.08)!important;color:var(--gtm-gold)!important;border-color:rgba(201,164,74,.28)!important}
+.approval-card{background:#111416!important;border-color:#2e3234!important}.approval-main b{color:#eee!important}
+.approval-goals{background:#13120e!important;border-color:#4b4022!important}.approval-goals-title{color:var(--gtm-gold)!important}
+
+/* Progressão */
+.progress-hero,.gtm-career-hero{background:linear-gradient(105deg,#111314,#171919 62%,#1d1910)!important;border-color:#3a3730!important}
+.progress-circle{border-color:#2b281f!important;box-shadow:0 0 0 1px #57471f!important}.progress-circle b,.gtm-career-circle b{color:var(--gtm-gold)!important}
+.progress-goal,.gtm-progress-goal{background:#111416!important;border-color:#2c3032!important}.progress-goal.goal-done,.gtm-progress-goal.goal-done{background:#15130e!important;border-color:#5b4a21!important}
+.goal-track,.gtm-goal-track{background:#242321!important}.goal-track i,.gtm-goal-track i,.gtm-step-track i{background:linear-gradient(90deg,#967729,var(--gtm-gold))!important}
+.progress-note,.gtm-command-message{background:#15130e!important;border-color:#4a3d20!important}.progress-note b,.gtm-command-message b{color:var(--gtm-gold)!important}
+.gtm-career-step{background:#0f1314!important;border-color:#2b3131!important}.gtm-career-step.current{background:linear-gradient(90deg,#17140e,#101313)!important;border-color:#5d4c21!important}
+.gtm-step-number,.official-mark{background:#171818!important;border-color:#333637!important}.gtm-career-step.current .gtm-step-number{background:#201a0b!important;border-color:#5d4c21!important;color:var(--gtm-gold)!important}
+.gtm-step-title span,.gtm-step-meta b{color:var(--gtm-gold)!important}.gtm-step-arrow{border-color:#5d4c21!important;color:var(--gtm-gold)!important}
+
+/* Pessoal */
+.personal-profile-card,.personal-kpi,.personal-panel,.security-panel{background:#101315!important;border-color:#2b2f31!important}
+.personal-badge{background:#17140d!important;border-color:#5d4c21!important;color:#d8b967!important}
+.personal-kpi b{color:var(--gtm-gold)!important}.personal-progress .progress-track{background:#252423!important}.personal-progress .progress-track i{background:linear-gradient(90deg,#967729,var(--gtm-gold))!important}
+.personal-info-box,.personal-edit-readonly>div{background:#0d1011!important;border-color:#2d3133!important}
+
+/* Registros / comunicados / manual */
+.records-toolbar{border-color:#2b2f31!important}.record-filter.active{background:var(--gtm-gold)!important;color:#111!important;border-color:#e0bd62!important}
+.communication-card{background:linear-gradient(145deg,#121516,#0e1011)!important}.communication-head{border-color:#2b2f31!important}.communication-author{color:#777a79!important}
+.manual-index a:hover{background:#171818!important}.manual-cover{background:linear-gradient(115deg,#101213,#1a1a17)!important}.manual-index-title,.manual-cover span,.manual-document .section-heading p{color:var(--gtm-gold)!important}
+
+/* Modais */
+.modal{background:rgba(0,0,0,.78)!important}.modal-card{background:#111416!important;border-color:#37393a!important;border-radius:14px!important}.modal-card input{background:#090b0c!important;border-color:#303438!important}
+.modal-card .primary{background:var(--gtm-gold)!important;color:#111!important;border:1px solid #e0bd62!important}
+.modal-close{color:#777!important}.modal-close:hover{color:var(--gtm-gold)!important}
+
+/* Remoção visual de qualquer destaque roxo/azul herdado */
+.hero-metric b,.dash-icon,.qru-type.selected,.qru-chip,.qru-selected-count,.action-type.selected,.action-result.selected,.action-chip,.action-selected-count,.record-code,.record-points,.record-type-pill,.progress-circle b,.progress-goal.goal-done .goal-icon,.gtm-career-circle b{filter:none}
+
+@media(max-width:1050px){.app aside{width:220px!important}.hero-metrics{grid-template-columns:repeat(2,minmax(86px,1fr))!important}}
+@media(max-width:700px){.app aside{width:68px!important}.aside-brand div,.app nav button span,.motto,.logout{display:none!important}.aside-brand{justify-content:center!important}.app nav button{justify-content:center!important}.header-title{font-size:8px!important}#page{padding:16px!important}}
