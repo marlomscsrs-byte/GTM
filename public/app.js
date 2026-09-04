@@ -107,6 +107,7 @@ async function loadPage(name){
   const titles={
     dashboard:["Painel operacional","Visão geral do GTM"],
     ocorrencias:["Ocorrências","Registro e histórico operacional"],
+    acoes:["Ações","Registro de atividades operacionais"],
     efetivo:["Efetivo","Quadro oficial de integrantes da unidade"],
     escala:["Escala","Serviços e plantões"],
     cursos:["Cursos","Treinamentos e certificações"],
@@ -120,6 +121,7 @@ async function loadPage(name){
   if(name==="escala") return servicePage();
   if(name==="efetivo") return efetivoPage();
   if(name==="ocorrencias") return qruPage();
+  if(name==="acoes") return actionPage();
   if(name==="admin") return adminPage();
   if(name==="manual") return manualPage();
   page.innerHTML=`<div class="page-head"><div><h1>${title}</h1><p>${sub}</p></div></div>
@@ -524,6 +526,81 @@ function manualPage(){
   map.forEach(([oldId,newId])=>{ const el=content.querySelector('#'+oldId); if(el) el.id=newId; });
 }
 
+
+
+const ACTION_TYPES = ['Fleeca 68','Joalheria','Banco Central','Banco Paleto','Lojinha'];
+const ACTION_RESULTS = ['Vitória','Derrota'];
+
+async function actionPage(){
+  try{
+    const officers=await api('/api/efetivo');
+    const selected=[];
+    page.innerHTML=`
+      <div class="action-head">
+        <div><span class="eyebrow">ATIVIDADE OPERACIONAL</span><h1>Registrar Ação</h1><p>${new Date().toLocaleDateString('pt-BR')}</p></div>
+      </div>
+
+      <section class="action-section">
+        <div class="action-section-title">TIPO DE AÇÃO <b>*</b></div>
+        <div class="action-type-grid">${ACTION_TYPES.map((t,i)=>`<button type="button" class="action-type ${i===0?'selected':''}" data-type="${escapeAttr(t)}" onclick="selectActionType(this)">${escapeHtml(t)}</button>`).join('')}</div>
+      </section>
+
+      <section class="action-section">
+        <div class="action-section-title">RESULTADO <b>*</b></div>
+        <div class="action-result-grid">${ACTION_RESULTS.map((t,i)=>`<button type="button" class="action-result ${i===0?'selected':''}" data-result="${escapeAttr(t)}" onclick="selectActionResult(this)">${escapeHtml(t)}</button>`).join('')}</div>
+      </section>
+
+      <section class="action-section">
+        <label class="action-field-label">Negociação<textarea id="acao-negociacao" placeholder="Descreva como foi a negociação..."></textarea></label>
+      </section>
+
+      <section class="action-section">
+        <label class="action-field-label">Título<input id="acao-titulo" value="Ação - Fleeca 68"></label>
+        <label class="action-field-label action-description">Descrição / Observações<textarea id="acao-descricao"></textarea></label>
+      </section>
+
+      <section class="action-section">
+        <div class="action-section-row"><div><div class="action-section-title">VEÍCULOS ENVOLVIDOS</div><small>Os três primeiros campos são fixos. Adicione mais veículos quando necessário.</small></div><button type="button" class="action-add" onclick="addActionVehicle()">＋ Adicionar veículo</button></div>
+        <div id="acao-veiculos" class="action-vehicles">${actionVehicleCard(1)}${actionVehicleCard(2)}${actionVehicleCard(3)}</div>
+      </section>
+
+      <section class="action-section">
+        <div class="action-section-row"><div class="action-section-title">♟ OFICIAIS ENVOLVIDOS <b>*</b></div><button type="button" class="action-me" onclick="toggleMyActionOfficer()">＋ Me adicionar</button></div>
+        <div id="acao-selected" class="action-selected"></div>
+        <input id="acao-search" class="action-search" placeholder="⌕ Buscar por nome ou ID..." oninput="filterActionOfficers(this.value)">
+        <div id="acao-officers" class="action-officer-list">${renderActionOfficers(officers, selected)}</div>
+        <div class="action-selected-count" id="acao-selected-count">0 oficial(is) selecionado(s)</div>
+      </section>
+
+      <div class="action-bottom-actions"><button class="btn secondary" onclick="loadPage('dashboard')">Cancelar</button><button class="btn" onclick="submitAction()">Registrar Ação</button></div>`;
+    window.actionOfficers=officers; window.actionSelected=selected; window.actionVehicleCount=3;
+    document.getElementById('acao-titulo').addEventListener('input',()=>{});
+  }catch(e){ page.innerHTML=`<div class="section"><h3>Não foi possível carregar o formulário</h3><p style="color:#718395;font-size:11px">${escapeHtml(e.message)}</p></div>`; }
+}
+
+function actionVehicleCard(n){
+  return `<div class="action-vehicle-card" data-vehicle="${n}"><h3>VEÍCULO ${n}</h3><label>Veículo / placa / descrição<input class="acao-veiculo-desc" placeholder="Ex.: Sultan RS — ABC1234"></label><label>Desfecho<select class="acao-veiculo-desfecho"><option>Não informado</option><option>Recuperado</option><option>Apreendido</option><option>Destruído</option><option>Fugiu</option></select></label></div>`;
+}
+function addActionVehicle(){
+  const wrap=document.getElementById('acao-veiculos'); if(!wrap)return; const n=(window.actionVehicleCount||3)+1; window.actionVehicleCount=n; wrap.insertAdjacentHTML('beforeend',actionVehicleCard(n));
+}
+function selectActionType(btn){ document.querySelectorAll('.action-type').forEach(x=>x.classList.remove('selected')); btn.classList.add('selected'); const title=document.getElementById('acao-titulo'); if(title) title.value=`Ação - ${btn.dataset.type}`; }
+function selectActionResult(btn){ document.querySelectorAll('.action-result').forEach(x=>x.classList.remove('selected')); btn.classList.add('selected'); }
+function renderActionOfficers(rows, selected){
+  const q=(document.getElementById('acao-search')?.value||'').toLowerCase().trim();
+  return rows.filter(r=>!q || `${r.nome} ${r.matricula}`.toLowerCase().includes(q)).map(r=>`<button type="button" class="action-officer ${selected.some(x=>x.id===r.id)?'picked':''}" onclick="toggleActionOfficer('${escapeAttr(r.id)}')"><b>${escapeHtml(r.nome)}</b><span>ID: ${escapeHtml(r.matricula||'—')}</span></button>`).join('') || '<div class="action-empty">Nenhum integrante encontrado.</div>';
+}
+function filterActionOfficers(){ const el=document.getElementById('acao-officers'); if(el) el.innerHTML=renderActionOfficers(window.actionOfficers||[],window.actionSelected||[]); }
+function updateActionSelected(){ const selected=window.actionSelected||[]; document.getElementById('acao-selected').innerHTML=selected.map(r=>`<span class="action-chip">${escapeHtml(r.nome)} <button type="button" onclick="toggleActionOfficer('${escapeAttr(r.id)}')">×</button></span>`).join(''); document.getElementById('acao-selected-count').textContent=`${selected.length} oficial(is) selecionado(s)`; filterActionOfficers(); }
+function toggleActionOfficer(id){ const rows=window.actionOfficers||[], selected=window.actionSelected||[]; const row=rows.find(r=>r.id===id); if(!row)return; const i=selected.findIndex(x=>x.id===id); if(i>=0)selected.splice(i,1); else selected.push(row); window.actionSelected=selected; updateActionSelected(); }
+function toggleMyActionOfficer(){ const id=window.currentUserId || currentUser?.id; if(id) toggleActionOfficer(id); }
+async function submitAction(){
+  const selected=window.actionSelected||[]; if(!selected.length){ alert('Selecione pelo menos um oficial envolvido.'); return; }
+  const tipo=document.querySelector('.action-type.selected')?.dataset.type||'Fleeca 68'; const resultado=document.querySelector('.action-result.selected')?.dataset.result||'Vitória';
+  const veiculos=[...document.querySelectorAll('.action-vehicle-card')].map(card=>({descricao:card.querySelector('.acao-veiculo-desc')?.value.trim()||'',desfecho:card.querySelector('.acao-veiculo-desfecho')?.value||'Não informado'})).filter(v=>v.descricao);
+  const body={tipo,resultado,negociacao:document.getElementById('acao-negociacao')?.value||'',titulo:document.getElementById('acao-titulo')?.value.trim()||`Ação - ${tipo}`,descricao:document.getElementById('acao-descricao')?.value||'',veiculos,oficiais:selected.map(x=>({id:x.id,nome:x.nome,matricula:x.matricula,patente:x.patente}))};
+  try{ const data=await api('/api/acoes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); alert(data.message||'Ação registrada com sucesso.'); loadPage('dashboard'); }catch(e){ alert(e.message); }
+}
 
 const QRU_TYPES = [
   'ATM/Registradora','Venda de Droga','Fuga de Abordagem','Roubo de Veículo/Viatura',

@@ -496,6 +496,49 @@ app.post("/api/ocorrencias", auth, async (req, res) => {
   } catch (error) { console.error(error); res.status(500).json({ error: "Não foi possível registrar a QRU." }); }
 });
 
+
+
+app.post("/api/acoes", auth, async (req, res) => {
+  const { tipo, resultado, negociacao, titulo, descricao, veiculos, oficiais } = req.body || {};
+  if (!tipo || !resultado || !titulo) {
+    return res.status(400).json({ error: "Tipo de ação, resultado e título são obrigatórios." });
+  }
+  const safeVehicles = Array.isArray(veiculos) ? veiculos.filter(v => v && (v.descricao || v.deschfecho || v.desfecho)).map(v => ({
+    descricao: String(v.descricao || '').trim(),
+    desfecho: String(v.desfecho || 'Não informado').trim() || 'Não informado'
+  })) : [];
+  const safeOfficers = Array.isArray(oficiais) ? oficiais.map(o => ({
+    id: o.id, nome: String(o.nome || ''), matricula: String(o.matricula || ''), patente: String(o.patente || '')
+  })) : [];
+  const pontos = 3.0;
+  try {
+    const result = await pool.query(
+      `INSERT INTO acoes (usuario_id,tipo,resultado,negociacao,titulo,descricao,veiculos,oficiais,pontos)
+       VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9)
+       RETURNING id,tipo,resultado,titulo,pontos,created_at`,
+      [req.user.id, String(tipo).trim(), String(resultado).trim(), negociacao || null, String(titulo).trim(), descricao || null, JSON.stringify(safeVehicles), JSON.stringify(safeOfficers), pontos]
+    );
+    await pool.query(`INSERT INTO logs (usuario_id,acao,entidade,entidade_id,detalhes) VALUES ($1,'REGISTRAR_ACAO','acoes',$2,$3)`, [req.user.id, result.rows[0].id, JSON.stringify({tipo, resultado, pontos})]);
+    res.status(201).json({ ok:true, acao:result.rows[0], message:'Ação registrada com sucesso.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Não foi possível registrar a ação.' });
+  }
+});
+
+app.get("/api/acoes", auth, async (_, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT a.id,a.tipo,a.resultado,a.negociacao,a.titulo,a.descricao,a.veiculos,a.oficiais,a.pontos,a.created_at,
+             u.nome AS autor,u.matricula AS autor_matricula
+      FROM acoes a LEFT JOIN usuarios u ON u.id=a.usuario_id
+      ORDER BY a.created_at DESC LIMIT 50`);
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Não foi possível carregar as ações.' });
+  }
+});
 app.get("/api/ocorrencias", auth, async (_, res) => {
   const { rows } = await pool.query(
     `SELECT id, protocolo, tipo, titulo, local, status, created_at

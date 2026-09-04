@@ -176,3 +176,20 @@ CREATE INDEX IF NOT EXISTS idx_pontos_servico_usuario ON pontos_servico(usuario_
 CREATE INDEX IF NOT EXISTS idx_pontos_servico_status ON pontos_servico(status);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_pontos_servico_um_ativo_por_usuario
   ON pontos_servico(usuario_id) WHERE status='em_servico';
+
+
+CREATE TABLE IF NOT EXISTS acoes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+  tipo VARCHAR(100) NOT NULL,
+  resultado VARCHAR(30) NOT NULL,
+  negociacao TEXT,
+  titulo VARCHAR(180) NOT NULL,
+  descricao TEXT,
+  veiculos JSONB NOT NULL DEFAULT '[]'::jsonb,
+  oficiais JSONB NOT NULL DEFAULT '[]'::jsonb,
+  pontos NUMERIC(10,1) NOT NULL DEFAULT 3.0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_acoes_created ON acoes(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_acoes_usuario ON acoes(usuario_id, created_at DESC);
