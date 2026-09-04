@@ -202,7 +202,23 @@ CREATE INDEX IF NOT EXISTS idx_acoes_usuario ON acoes(usuario_id, created_at DES
 
 -- Progressão GTM: somente dois níveis de carreira. As metas são definidas pelo Comando.
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nivel_carreira VARCHAR(20);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cargo VARCHAR(40) DEFAULT 'Piloto Probatório';
 ALTER TABLE efetivo ADD COLUMN IF NOT EXISTS nivel_carreira VARCHAR(20);
+ALTER TABLE efetivo ADD COLUMN IF NOT EXISTS cargo VARCHAR(40) DEFAULT 'Piloto Probatório';
+UPDATE efetivo SET cargo = CASE
+  WHEN LOWER(COALESCE(unidade,''))='comando' OR LOWER(COALESCE(patente,''))='comando' THEN 'Comando'
+  WHEN LOWER(COALESCE(unidade,'')) IN ('sub-comando','subcomando') THEN 'Sub-Comando'
+  WHEN LOWER(COALESCE(unidade,''))='supervisor' THEN 'Supervisor'
+  WHEN LOWER(COALESCE(unidade,''))='piloto oficial' OR LOWER(COALESCE(patente,''))='piloto oficial' THEN 'Piloto Oficial'
+  ELSE 'Probatório' END
+WHERE cargo IS NULL OR cargo='' OR cargo='Piloto Probatório';
+UPDATE usuarios SET cargo = CASE
+  WHEN LOWER(COALESCE(patente,''))='comando' THEN 'Comando'
+  WHEN LOWER(COALESCE(patente,'')) IN ('sub-comando','subcomando') THEN 'Sub-Comando'
+  WHEN LOWER(COALESCE(patente,''))='supervisor' THEN 'Supervisor'
+  WHEN LOWER(COALESCE(patente,''))='piloto oficial' THEN 'Piloto Oficial'
+  ELSE 'Probatório' END
+WHERE cargo IS NULL OR cargo='';
 
 CREATE TABLE IF NOT EXISTS progressao_metas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

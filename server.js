@@ -177,7 +177,7 @@ app.post("/api/auth/login", async (req, res) => {
   if (!username || !password) return res.status(400).json({ error: "Informe usuário e senha." });
 
   const { rows } = await pool.query(
-    `SELECT id, username, password_hash, nome, matricula, patente, email, telefone_cidade, role, ativo, aprovado, status_cadastro
+    `SELECT id, username, password_hash, nome, matricula, patente, cargo, email, telefone_cidade, role, ativo, aprovado, status_cadastro
      FROM usuarios WHERE lower(username)=lower($1) LIMIT 1`, [username]
   );
 
@@ -195,7 +195,7 @@ app.post("/api/auth/login", async (req, res) => {
   await pool.query("UPDATE usuarios SET ultimo_acesso=now() WHERE id=$1", [user.id]);
 
   const token = jwt.sign(
-    { id: user.id, username: user.username, nome: user.nome, patente: user.patente, telefone_cidade: user.telefone_cidade, role: user.role },
+    { id: user.id, username: user.username, nome: user.nome, patente: user.patente, cargo: user.cargo, telefone_cidade: user.telefone_cidade, role: user.role },
     JWT_SECRET,
     { expiresIn: "8h" }
   );
@@ -426,11 +426,11 @@ app.get("/api/ranking", auth, async (req, res) => {
 
 app.get("/api/efetivo", auth, async (_, res) => {
   const { rows } = await pool.query(
-    `SELECT e.id, e.nome, e.matricula, e.patente, e.status, e.unidade, e.ativo, e.telefone_cidade, e.nivel_carreira,
+    `SELECT e.id, e.nome, e.matricula, e.patente, e.cargo, e.status, e.unidade, e.ativo, e.telefone_cidade, e.nivel_carreira,
             u.id AS usuario_id, u.username, u.aprovado AS conta_aprovada, u.ativo AS conta_ativa
      FROM efetivo e
      LEFT JOIN usuarios u ON u.id=e.usuario_id
-     ORDER BY CASE e.unidade
+     ORDER BY CASE e.cargo
        WHEN 'Comando' THEN 1 WHEN 'Sub-Comando' THEN 2 WHEN 'Supervisor' THEN 3
        WHEN 'Piloto Oficial' THEN 4 WHEN 'Probatório' THEN 5 ELSE 9 END,
        e.nome` 
@@ -480,16 +480,17 @@ app.post("/api/admin/cadastros/:id/aprovar", auth, requireAdmin, async (req, res
     }
 
     const patente = career === 'oficial' ? 'Piloto Oficial' : 'Piloto Probatório';
+    const cargo = career === 'oficial' ? 'Piloto Oficial' : 'Probatório';
     const efetivoResult = await client.query(
-      `INSERT INTO efetivo (usuario_id, nome, matricula, patente, status, unidade, ativo, data_ingresso, telefone_cidade, nivel_carreira)
-       VALUES ($1,$2,$3,$4,'Ativo',$4,true,current_date,$5,$6)
+      `INSERT INTO efetivo (usuario_id, nome, matricula, patente, cargo, status, unidade, ativo, data_ingresso, telefone_cidade, nivel_carreira)
+       VALUES ($1,$2,$3,$4,$5,'Ativo',$5,true,current_date,$6,$7)
        RETURNING id`,
-      [user.id, user.nome, user.matricula, patente, user.telefone_cidade, career]
+      [user.id, user.nome, user.matricula, patente, cargo, user.telefone_cidade, career]
     );
 
     await client.query(
-      `UPDATE usuarios SET ativo=true, aprovado=true, status_cadastro='aprovado', patente=$1, nivel_carreira=$2 WHERE id=$3`,
-      [patente, career, user.id]
+      `UPDATE usuarios SET ativo=true, aprovado=true, status_cadastro='aprovado', patente=$1, cargo=$4, nivel_carreira=$2 WHERE id=$3`,
+      [patente, career, user.id, cargo]
     );
 
     await client.query(
@@ -581,8 +582,8 @@ app.post("/api/admin/progressao/:solicitacaoId/decidir", auth, requireAdmin, asy
     if(!q.rows[0]){await client.query('ROLLBACK');return res.status(404).json({error:'Solicitação de avaliação não encontrada.'});}
     const row=q.rows[0];
     if(decisao==='promover'){
-      await client.query(`UPDATE usuarios SET patente='Piloto Oficial',nivel_carreira='oficial' WHERE id=$1`,[row.usuario_id]);
-      await client.query(`UPDATE efetivo SET patente='Piloto Oficial',unidade='Piloto Oficial',nivel_carreira='oficial' WHERE id=$1`,[row.efetivo_id]);
+      await client.query(`UPDATE usuarios SET patente='Piloto Oficial', cargo='Piloto Oficial', nivel_carreira='oficial' WHERE id=$1`,[row.usuario_id]);
+      await client.query(`UPDATE efetivo SET patente='Piloto Oficial',cargo='Piloto Oficial',unidade='Piloto Oficial',nivel_carreira='oficial' WHERE id=$1`,[row.efetivo_id]);
       await client.query(`UPDATE progressao_metas SET carreira='oficial',horas_meta=0,pontos_meta=0,qru_meta=0,acoes_meta=0,cursos_meta=0,observacoes=COALESCE(observacoes,'') || CASE WHEN COALESCE(observacoes,'')='' THEN 'Promoção aprovada pelo Comando.' ELSE E'\\nPromoção aprovada pelo Comando.' END WHERE usuario_id=$1`,[row.usuario_id]);
     }
     await client.query(`UPDATE progressao_solicitacoes SET status=$1,decidido_por=$2,decidido_em=now(),observacoes=$3 WHERE id=$4`,[decisao==='promover'?'aprovada':'mantida',req.user.id,String(req.body?.observacoes||'').trim()||null,req.params.solicitacaoId]);
@@ -632,7 +633,7 @@ app.post("/api/admin/cadastros/:id/recusar", auth, requireAdmin, async (req, res
 
 app.get("/api/admin/usuarios", auth, requireAdmin, async (_, res) => {
   const { rows } = await pool.query(
-    `SELECT u.id, u.username, u.nome, u.matricula, u.patente, u.nivel_carreira, u.email, u.telefone_cidade, u.role, u.ativo, u.aprovado, u.status_cadastro, u.ultimo_acesso,
+    `SELECT u.id, u.username, u.nome, u.matricula, u.patente, u.cargo, u.nivel_carreira, u.email, u.telefone_cidade, u.role, u.ativo, u.aprovado, u.status_cadastro, u.ultimo_acesso,
             e.id AS efetivo_id, e.matricula
      FROM usuarios u
      LEFT JOIN efetivo e ON e.usuario_id=u.id
@@ -644,17 +645,19 @@ app.get("/api/admin/usuarios", auth, requireAdmin, async (_, res) => {
 
 app.put("/api/admin/usuarios/:id", auth, requireAdmin, async (req, res) => {
   try {
-    const { nome, email, telefone_cidade, role, ativo } = req.body || {};
+    const { nome, email, telefone_cidade, role, ativo, cargo } = req.body || {};
     if (!nome || !String(nome).trim()) return res.status(400).json({ error: "O nome é obrigatório." });
     const allowedRoles = ['admin','comando','administrador','operador'];
+    const allowedCargos = ['Comando','Sub-Comando','Supervisor','Piloto Oficial','Probatório'];
+    const nextCargo = allowedCargos.includes(String(cargo||'').trim()) ? String(cargo).trim() : null;
     const nextRole = allowedRoles.includes(String(role || '').trim().toLowerCase()) ? String(role).trim().toLowerCase() : 'operador';
     if (String(req.params.id) === String(req.user.id) && nextRole === 'operador') return res.status(400).json({ error: "Você não pode remover seu próprio acesso administrativo." });
     const { rows } = await pool.query(
-      `UPDATE usuarios SET nome=$1, email=$2, telefone_cidade=$3, role=$4, ativo=$5 WHERE id=$6 RETURNING id,username,nome,email,telefone_cidade,role,ativo,aprovado,status_cadastro`,
-      [String(nome).trim(), String(email || '').trim() || null, String(telefone_cidade || '').trim() || null, nextRole, ativo !== false, req.params.id]
+      `UPDATE usuarios SET nome=$1, email=$2, telefone_cidade=$3, role=$4, ativo=$5, cargo=COALESCE($6,cargo), patente=COALESCE($6,patente) WHERE id=$7 RETURNING id,username,nome,email,telefone_cidade,role,ativo,aprovado,status_cadastro,cargo,patente`,
+      [String(nome).trim(), String(email || '').trim() || null, String(telefone_cidade || '').trim() || null, nextRole, ativo !== false, nextCargo, req.params.id]
     );
     if (!rows[0]) return res.status(404).json({ error: "Conta não encontrada." });
-    await pool.query(`UPDATE efetivo SET nome=$1, telefone_cidade=$2, ativo=$3 WHERE usuario_id=$4`, [rows[0].nome, rows[0].telefone_cidade, rows[0].ativo, rows[0].id]);
+    await pool.query(`UPDATE efetivo SET nome=$1, telefone_cidade=$2, ativo=$3, cargo=COALESCE($4,cargo), patente=COALESCE($4,patente), unidade=COALESCE($4,unidade) WHERE usuario_id=$5`, [rows[0].nome, rows[0].telefone_cidade, rows[0].ativo, nextCargo, rows[0].id]);
     await pool.query(`INSERT INTO logs (usuario_id,acao,entidade,entidade_id,detalhes) VALUES ($1,'EDITAR_CONTA','usuarios',$2,$3)`, [req.user.id, rows[0].id, JSON.stringify({role:nextRole,ativo:rows[0].ativo})]);
     res.json({ ok:true, user:rows[0], message:'Conta atualizada com sucesso.' });
   } catch (error) { console.error(error); res.status(500).json({ error:'Não foi possível editar a conta.' }); }
