@@ -536,10 +536,8 @@ function isCommandUser(){
 }
 
 async function adminPage(){
-  if(!isCommandUser()){
-    page.innerHTML=`<div class="section"><h3>ACESSO RESTRITO</h3><p style="color:#718395;font-size:11px">Somente o comando pode administrar contas e usuários.</p></div>`;
-    return;
-  }
+  // A autorização real é feita pelo backend consultando o PostgreSQL.
+  // Não bloquear pela cópia do usuário armazenada no localStorage, pois ela pode estar desatualizada.
   try{
     const [pending, rows]=await Promise.all([
       api('/api/admin/cadastros-pendentes'),
