@@ -67,25 +67,49 @@ document.getElementById("form").onsubmit = async e => {
   } catch(err) { error.textContent=err.message; }
 };
 
-const registerModal = document.getElementById("register-modal");
-const registerForm = document.getElementById("register-form");
-document.getElementById("open-register")?.addEventListener("click",()=>{
-  registerModal?.classList.remove("hidden");
-  document.getElementById("register-error").textContent="";
-});
-document.getElementById("close-register")?.addEventListener("click",()=>registerModal?.classList.add("hidden"));
-registerModal?.addEventListener("click",e=>{ if(e.target===registerModal) registerModal.classList.add("hidden"); });
-registerForm?.addEventListener("submit", async e=>{
-  e.preventDefault();
-  const error=document.getElementById("register-error"); error.textContent="";
-  const body=Object.fromEntries(new FormData(registerForm).entries());
-  try{
-    const r=await fetch("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-    const data=await r.json();
-    if(!r.ok) throw new Error(data.error||"Não foi possível enviar o cadastro.");
-    registerModal.classList.add("hidden"); registerForm.reset();
-    alert("Cadastro enviado com sucesso! Aguarde a aprovação do Comando para receber acesso ao Portal GTM.");
-  }catch(err){ error.textContent=err.message; }
+// O script é carregado antes dos modais no HTML. Por isso, o fluxo de cadastro
+// precisa ser inicializado somente depois que o DOM estiver completamente montado.
+document.addEventListener("DOMContentLoaded", () => {
+  const registerModal = document.getElementById("register-modal");
+  const registerForm = document.getElementById("register-form");
+  const openRegister = document.getElementById("open-register");
+  const closeRegister = document.getElementById("close-register");
+  const registerError = document.getElementById("register-error");
+
+  openRegister?.addEventListener("click", () => {
+    registerModal?.classList.remove("hidden");
+    if (registerError) registerError.textContent = "";
+  });
+
+  closeRegister?.addEventListener("click", () => {
+    registerModal?.classList.add("hidden");
+  });
+
+  registerModal?.addEventListener("click", e => {
+    if (e.target === registerModal) registerModal.classList.add("hidden");
+  });
+
+  registerForm?.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (registerError) registerError.textContent = "";
+    const body = Object.fromEntries(new FormData(registerForm).entries());
+
+    try {
+      const r = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || "Não foi possível enviar o cadastro.");
+
+      registerModal?.classList.add("hidden");
+      registerForm.reset();
+      alert("Cadastro enviado com sucesso! Aguarde a aprovação do Comando para receber acesso ao Portal GTM.");
+    } catch (err) {
+      if (registerError) registerError.textContent = err.message;
+    }
+  });
 });
 
 document.getElementById("logout").onclick=()=>{
