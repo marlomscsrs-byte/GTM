@@ -584,7 +584,7 @@ function openApproval(id,nome){
   document.getElementById('approval-modal')?.remove();
   document.body.insertAdjacentHTML('beforeend',`
     <div class="modal approval-modal" id="approval-modal">
-      <div class="modal-card approval-card">
+      <div class="modal-card approval-modal-card">
         <button class="modal-close" type="button" onclick="closeApproval()">×</button>
         <span class="eyebrow">APROVAÇÃO DO COMANDO</span>
         <h2>Aprovar cadastro</h2>
