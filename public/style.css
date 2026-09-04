@@ -82,12 +82,19 @@ body { overflow-x:hidden; }
   width: 100vw !important;
   height: 100vh !important;
   min-height: 100vh !important;
-  display: block !important;
+  display: grid !important;
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
   background-size: cover !important;
   background-position: center center !important;
+}
+
+/* Quando autenticado, a tela de login precisa desaparecer por completo. */
+#login.login.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 #login.login .login-card {
   position: absolute !important;
