@@ -72,3 +72,40 @@
 .login-visual-brand,.login-visual-footer{display:none}
 @media(max-width:900px){.login{min-height:100svh}.login-card{width:min(430px,calc(100vw - 32px));margin:20px auto;padding:32px 28px 28px}}
 @media(max-width:520px){.login-card{padding:30px 24px 26px}.login-card h1{font-size:24px}.login-logo{width:66px;height:66px}}
+
+/* ===== LOGIN GTM v46 — CENTRALIZAÇÃO ABSOLUTA ===== */
+html, body { min-height:100%; }
+body { overflow-x:hidden; }
+#login.login {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background-size: cover !important;
+  background-position: center center !important;
+}
+#login.login .login-card {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(430px, calc(100vw - 40px)) !important;
+  max-height: calc(100vh - 40px) !important;
+  margin: 0 !important;
+  justify-self: auto !important;
+  align-self: auto !important;
+  z-index: 20 !important;
+}
+@media (max-width:520px) {
+  #login.login .login-card {
+    width: calc(100vw - 28px) !important;
+    padding: 28px 22px 24px !important;
+  }
+}
