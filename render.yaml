@@ -1,20 +1,68 @@
 services:
   - type: web
-    name: portal-gtm
+    name: instrutores-sistema
     runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install --no-audit --no-fund
     startCommand: npm start
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: gtm-db
-          property: connectionString
+      - key: NODE_ENV
+        value: production
       - key: JWT_SECRET
         generateValue: true
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      # Discord: todos os envios do sistema usam exclusivamente o Bot.
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      # Chave pública da aplicação Discord, usada para validar cliques nos botões Aprovar/Reprovar.
+      - key: DISCORD_PUBLIC_KEY
+        sync: false
+      - key: DISCORD_CHANNEL_INSTRUTORES_CADASTROS_ID
+        value: "1542648874945220779"
+      - key: DISCORD_CHANNEL_INSTRUTORES_AGENDA_ID
+        value: "1534527437281689664"
+      - key: DISCORD_CHANNEL_INSTRUTORES_RELATORIO_ID
+        value: "1534527437281689665"
+      - key: DISCORD_CHANNEL_INSTRUTORES_NOVO_AGENDAMENTO_ID
+        value: "1542649641735028776"
+      - key: DISCORD_CHANNEL_INSTRUTORES_AVISOS_ID
+        value: "1534527437281689664"
+      - key: DISCORD_CHANNEL_RECRUTAMENTO_NOVO_AGENDAMENTO_ID
+        value: "1545945698434945074"
+      - key: DISCORD_CHANNEL_RECRUTAMENTO_AGENDA_ID
+        value: "1534527437482889226"
+      - key: DISCORD_CHANNEL_RECRUTAMENTO_BANCO_ID
+        value: "1539452981458767912"
+      - key: DISCORD_CHANNEL_APROVACOES_ID
+        value: "1545950248734826567"
+      - key: DISCORD_CHANNEL_RECRUTAMENTO_RESULTADOS_ID
+        value: "1534527437482889229"
+      # ID do canal Discord onde o Bot publica o Change Log. Configure no Render.
+      # Canal exclusivo para avisos de lives da Twitch. NÃO reutilizar o canal de Avisos de Cursos.
+      - key: DISCORD_CHANNEL_CIP_LIVES
+        sync: false
+      # Canal usado pelos avisos automáticos de cursos existentes.
+      - key: DISCORD_CHANNEL_CIP_AVISOS
+        sync: false
+      - key: DISCORD_CHANNEL_CHANGELOG_ID
+        sync: false
+      # Twitch EventSub / API
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
+      - key: TWITCH_EVENTSUB_CALLBACK_URL
+        sync: false
+      - key: TWITCH_EVENTSUB_SECRET
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: instrutores-db
+          property: connectionString
 
 databases:
-  - name: gtm-db
+  - name: instrutores-db
     plan: free
-    databaseName: gtm
-    user: gtm
