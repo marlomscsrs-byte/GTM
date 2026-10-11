@@ -223,28 +223,3 @@ footer a{color:#bfc4cb;text-decoration:none}
 body:not(.manual-open) .reading-progress{display:none}
 body:not(.manual-open) #portalFooter{display:none}
 @media(max-width:600px){.registration-form{grid-template-columns:1fr}.form-field,.form-field.full,.form-actions.full{grid-column:1}.registration-view,.placeholder-view{padding:75px 12px 35px}}
-
-
-/* Ajuste dos numeros dos cargos na aba Hierarquia */
-.hierarchy-role {
-  padding-right: 88px;
-}
-.hierarchy-role > span {
-  right: 22px;
-  top: 18px;
-  font-size: 36px;
-  line-height: 1;
-  color: rgba(205, 212, 222, .72);
-  letter-spacing: -1.5px;
-  pointer-events: none;
-}
-@media (max-width: 600px) {
-  .hierarchy-role {
-    padding: 22px 76px 22px 20px;
-  }
-  .hierarchy-role > span {
-    right: 14px;
-    top: 16px;
-    font-size: 30px;
-  }
-}

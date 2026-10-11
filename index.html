@@ -8,7 +8,12 @@
   <title>Manual de Conduta — G.T.M.</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="gtm-locked">
+<style id="gtm-auth-integration">
+#gtmAuthGate{position:fixed;inset:0;z-index:100000;background:#090b0f;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}#gtmAuthGate iframe{width:min(100%,980px);height:min(92vh,820px);border:1px solid #2b3442;border-radius:16px;background:#090b0f}body.gtm-locked{overflow:hidden}#gtmPointFrame{width:100%;height:820px;max-height:calc(100vh - 150px);border:1px solid #2b3442;border-radius:14px;background:#090b0f}.point-portal-shell{width:min(100%,1100px);margin:0 auto;padding:24px}.point-portal-shell h2{margin:0 0 8px}.point-portal-shell p{color:#a8b1bf}@media(max-width:700px){#gtmAuthGate iframe{height:94vh}.point-portal-shell{padding:12px}}
+</style>
+<div id="gtmAuthGate" aria-label="Login do Portal G.T.M."><iframe id="gtmAuthFrame" title="Login, cadastro e ponto G.T.M." src="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=acesso"></iframe></div>
+
   <div class="reading-progress" id="readingProgress"></div>
 
   <button class="mobile-menu" id="mobileMenu" aria-label="Abrir menu" aria-expanded="false">
@@ -36,7 +41,7 @@
       <div class="portal-menu-divider" aria-hidden="true"></div>
       <p class="nav-label">Operacional</p>
       <button class="portal-nav-link featured" type="button" data-view="registro"><span>✚</span> Registro de Prisão</button>
-      <a class="portal-nav-link" href="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=acesso" target="_blank" rel="noopener noreferrer"><span>◷</span> Cadastro / Bater Ponto <b>↗</b></a>
+      <button class="portal-nav-link" type="button" data-view="ponto"><span>◷</span> Bater Ponto</button>
       <a class="portal-nav-link admin-portal-link" href="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=admin" target="_blank" rel="noopener noreferrer"><span>⚙</span> Administração <b>↗</b></a>
     </nav>
 
@@ -306,6 +311,9 @@
       </div>
     </section>
 
+
+    <section class="portal-view placeholder-view" data-view-panel="ponto" id="pontoPortal"><div class="point-portal-shell"><p class="eyebrow">ÁREA OPERACIONAL</p><h2>Cadastro / Bater Ponto</h2><p>Seu ponto e histórico de serviço aparecem abaixo. Para encerrar a sessão, use o botão Sair dentro do painel.</p><iframe id="gtmPointFrame" title="Bater ponto G.T.M." src="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=acesso"></iframe></div></section>
+
     <footer id="portalFooter">
       <img src="assets/logo.png" alt="">
       <p>G.T.M. Villa · Manual de Conduta</p>
@@ -329,5 +337,32 @@
   </style>
 
   <script src="script.js"></script>
+
+<script id="gtmAuthBridge">
+(function(){
+ const gate=document.getElementById('gtmAuthGate');
+ const authFrame=document.getElementById('gtmAuthFrame');
+ const pointFrame=document.getElementById('gtmPointFrame');
+ let unlocked=false;let currentToken='';
+ pointFrame.addEventListener('load',function(){if(currentToken){try{pointFrame.contentWindow.postMessage({type:'GTM_SET_SESSION',token:currentToken},'*')}catch(e){}}});
+ function lockPortal(){unlocked=false;document.body.classList.add('gtm-locked');gate.style.display='flex';}
+ window.addEventListener('message',function(event){
+   if(event.source!==authFrame.contentWindow && event.source!==pointFrame.contentWindow) return;
+   const d=event.data||{};
+   if(d.type==='GTM_AUTHENTICATED'){
+     if(typeof d.token==='string') currentToken=d.token;
+     unlocked=true;gate.style.display='none';document.body.classList.remove('gtm-locked');
+     if(event.source===authFrame.contentWindow){
+       // O token fica no sessionStorage do iframe de acesso. A página de ponto usa seu próprio iframe/sessão.
+       // Para evitar pedir login novamente, mantemos o iframe de acesso autenticado e sincronizamos a sessão quando solicitado.
+       try{pointFrame.contentWindow.postMessage({type:'GTM_SET_SESSION',token:currentToken},'*')}catch(e){}
+     }
+   } else if(d.type==='GTM_LOGGED_OUT'){ lockPortal(); }
+ });
+ // O portal inicia bloqueado; só o Apps Script libera após autenticação válida.
+ lockPortal();
+})();
+</script>
+
 </body>
 </html>
