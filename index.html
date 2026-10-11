@@ -29,6 +29,7 @@
       <button class="portal-nav-link active" type="button" data-view="home"><span>⌂</span> Início</button>
       <button class="portal-nav-link" type="button" data-view="manual"><span>▤</span> Manual de Conduta</button>
       <button class="portal-nav-link" type="button" data-view="cursos"><span>◇</span> Cursos</button>
+      <button class="portal-nav-link" type="button" data-view="hierarquia"><span>♜</span> Hierarquia</button>
       <button class="portal-nav-link" type="button" data-view="armamentos"><span>⌖</span> Armamentos</button>
       <button class="portal-nav-link" type="button" data-view="veiculos"><span>◆</span> Veículos</button>
 
@@ -263,6 +264,24 @@
       <div class="placeholder-card"><span class="placeholder-icon">◇</span><p>FORMAÇÃO G.T.M.</p><h2>Cursos</h2><p class="placeholder-copy">Área reservada para treinamentos, materiais de instrução e certificações da unidade.</p><div class="coming-soon">Em breve</div></div>
     </section>
 
+    <section class="portal-view placeholder-view" data-view-panel="hierarquia">
+      <div class="placeholder-card hierarchy-card">
+        <span class="placeholder-icon">♜</span>
+        <p>ESTRUTURA ORGANIZACIONAL</p>
+        <h2>Hierarquia de Cargos</h2>
+        <p class="placeholder-copy">Conheça os cargos da G.T.M. e as responsabilidades de cada função dentro da unidade.</p>
+        <div class="role-grid hierarchy-grid">
+          <div class="role-card hierarchy-role"><span>01</span><h3>Comandante</h3><p>Autoridade máxima, responsável pela liderança geral da unidade.</p></div>
+          <div class="role-card hierarchy-role"><span>02</span><h3>Subcomandante</h3><p>Auxilia o Comandante e assume sua função na ausência dele.</p></div>
+          <div class="role-card hierarchy-role"><span>03</span><h3>Supervisor</h3><p>Supervisiona a equipe e garante o cumprimento das regras.</p></div>
+          <div class="role-card hierarchy-role"><span>04</span><h3>Capitão</h3><p>Coordena operações e orienta os membros da equipe.</p></div>
+          <div class="role-card hierarchy-role"><span>05</span><h3>Piloto Oficial</h3><p>Piloto autorizado a exercer suas funções oficialmente.</p></div>
+          <div class="role-card hierarchy-role"><span>06</span><h3>Probatório</h3><p>Membro em período de avaliação e treinamento.</p></div>
+        </div>
+        <div class="hierarchy-rule"><strong>REGRA GERAL</strong><p>Todos os cargos devem respeitar a hierarquia, seguindo as orientações dos superiores.</p></div>
+      </div>
+    </section>
+
     <section class="portal-view placeholder-view" data-view-panel="armamentos">
       <div class="placeholder-card"><span class="placeholder-icon">⌖</span><p>EQUIPAMENTOS OPERACIONAIS</p><h2>Armamentos</h2><p class="placeholder-copy">Área reservada para armamentos autorizados, regras de utilização e procedimentos de segurança.</p><div class="coming-soon">Em breve</div></div>
     </section>
@@ -295,6 +314,19 @@
 
   <button class="back-to-top" id="backToTop" aria-label="Voltar ao topo">↑</button>
   <div class="toast" id="toast" role="status"></div>
+
+  <style>
+    .hierarchy-card { max-width: 1100px; }
+    .hierarchy-grid { margin-top: 28px; text-align: left; }
+    .hierarchy-role { position: relative; min-height: 150px; }
+    .hierarchy-role > span { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; margin-bottom: 12px; border: 1px solid rgba(160,170,180,.35); border-radius: 8px; color: #c5cbd2; font-weight: 800; }
+    .hierarchy-role h3 { margin-top: 0; }
+    .hierarchy-rule { margin-top: 26px; padding: 20px 22px; text-align: left; border: 1px solid rgba(180,190,200,.28); border-left: 4px solid #aeb7c1; border-radius: 10px; background: rgba(255,255,255,.035); }
+    .hierarchy-rule strong { display: block; margin-bottom: 8px; letter-spacing: .12em; font-size: .78rem; }
+    .hierarchy-rule p { margin: 0; line-height: 1.7; }
+    @media (max-width: 640px) { .hierarchy-grid { grid-template-columns: 1fr; } .hierarchy-role { min-height: auto; } }
+  </style>
+
   <script src="script.js"></script>
 </body>
 </html>
