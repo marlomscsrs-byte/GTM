@@ -8,12 +8,7 @@
   <title>Manual de Conduta — G.T.M.</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="gtm-locked">
-<style id="gtm-auth-integration">
-#gtmAuthGate{position:fixed;inset:0;z-index:100000;background:#090b0f;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}#gtmAuthGate iframe{width:min(100%,980px);height:min(92vh,820px);border:1px solid #2b3442;border-radius:16px;background:#090b0f}body.gtm-locked{overflow:hidden}#gtmPointFrame{width:100%;height:820px;max-height:calc(100vh - 150px);border:1px solid #2b3442;border-radius:14px;background:#090b0f}.point-portal-shell{width:min(100%,1100px);margin:0 auto;padding:24px}.point-portal-shell h2{margin:0 0 8px}.point-portal-shell p{color:#a8b1bf}@media(max-width:700px){#gtmAuthGate iframe{height:94vh}.point-portal-shell{padding:12px}}
-</style>
-<div id="gtmAuthGate" aria-label="Login do Portal G.T.M."><iframe id="gtmAuthFrame" title="Login, cadastro e ponto G.T.M." src="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=acesso"></iframe></div>
-
+<body>
   <div class="reading-progress" id="readingProgress"></div>
 
   <button class="mobile-menu" id="mobileMenu" aria-label="Abrir menu" aria-expanded="false">
@@ -41,7 +36,7 @@
       <div class="portal-menu-divider" aria-hidden="true"></div>
       <p class="nav-label">Operacional</p>
       <button class="portal-nav-link featured" type="button" data-view="registro"><span>✚</span> Registro de Prisão</button>
-      <button class="portal-nav-link" type="button" data-view="ponto"><span>◷</span> Bater Ponto</button>
+      <a class="portal-nav-link" href="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=acesso" target="_blank" rel="noopener noreferrer"><span>◷</span> Cadastro / Bater Ponto <b>↗</b></a>
       <a class="portal-nav-link admin-portal-link" href="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=admin" target="_blank" rel="noopener noreferrer"><span>⚙</span> Administração <b>↗</b></a>
     </nav>
 
@@ -274,17 +269,19 @@
       <div class="placeholder-card hierarchy-card">
         <span class="placeholder-icon">♜</span>
         <p>ESTRUTURA ORGANIZACIONAL</p>
-        <h2>Hierarquia de Cargos</h2>
-        <p class="placeholder-copy">Conheça os cargos da G.T.M. e as responsabilidades de cada função dentro da unidade.</p>
+        <h2>Hierarquia da GTM</h2>
+        <p class="placeholder-copy">Cargos oficiais e responsabilidades de cada função dentro do Grupamento Tático de Motocicletas.</p>
         <div class="role-grid hierarchy-grid">
-          <div class="role-card hierarchy-role"><span>01</span><h3>Comandante</h3><p>Autoridade máxima, responsável pela liderança geral da unidade.</p></div>
-          <div class="role-card hierarchy-role"><span>02</span><h3>Subcomandante</h3><p>Auxilia o Comandante e assume sua função na ausência dele.</p></div>
-          <div class="role-card hierarchy-role"><span>03</span><h3>Supervisor</h3><p>Supervisiona a equipe e garante o cumprimento das regras.</p></div>
-          <div class="role-card hierarchy-role"><span>04</span><h3>Capitão</h3><p>Coordena operações e orienta os membros da equipe.</p></div>
-          <div class="role-card hierarchy-role"><span>05</span><h3>Piloto Oficial</h3><p>Piloto autorizado a exercer suas funções oficialmente.</p></div>
-          <div class="role-card hierarchy-role"><span>06</span><h3>Probatório</h3><p>Membro em período de avaliação e treinamento.</p></div>
+          <div class="role-card hierarchy-role"><span>01 🥇</span><h3>Comandante</h3><p>Responsável por toda a GTM, define as regras, toma as decisões finais, coordena as operações e supervisiona todos os membros.</p></div>
+          <div class="role-card hierarchy-role"><span>02 🥈</span><h3>Subcomandante</h3><p>Auxilia o comandante, assume o comando na sua ausência, acompanha o desempenho dos membros e ajuda a organizar as atividades do grupamento.</p></div>
+          <div class="role-card hierarchy-role"><span>03 📋</span><h3>Supervisor</h3><p>Fiscaliza o trabalho dos pilotos, verifica o cumprimento das normas, acompanha treinamentos e comunica problemas à liderança.</p></div>
+          <div class="role-card hierarchy-role"><span>04 🛂</span><h3>Capitão</h3><p>Lidera equipes durante operações, distribui funções, orienta os pilotos e garante que as ordens superiores sejam cumpridas.</p></div>
+          <div class="role-card hierarchy-role"><span>05 🪖</span><h3>Piloto Veterano</h3><p>Membro experiente, com bom domínio das técnicas de pilotagem e das regras da GTM. Pode auxiliar nos treinamentos e orientar os pilotos mais novos.</p></div>
+          <div class="role-card hierarchy-role"><span>06 🏍️</span><h3>Piloto Oficial</h3><p>Piloto aprovado e habilitado para atuar oficialmente nas atividades da GTM, cumprindo procedimentos e participando das operações.</p></div>
+          <div class="role-card hierarchy-role"><span>07 🛵</span><h3>Piloto</h3><p>Integrante que já atua na função de pilotagem, desenvolve suas habilidades e segue as orientações dos superiores.</p></div>
+          <div class="role-card hierarchy-role"><span>08 🚲</span><h3>Probatório</h3><p>Membro em período de avaliação e adaptação. Aprende as regras, passa por treinamentos e precisa demonstrar disciplina e habilidade para ser promovido a piloto.</p></div>
         </div>
-        <div class="hierarchy-rule"><strong>REGRA GERAL</strong><p>Todos os cargos devem respeitar a hierarquia, seguindo as orientações dos superiores.</p></div>
+        <div class="hierarchy-rule"><strong>REGRA GERAL</strong><p>Todos os integrantes devem respeitar a cadeia de comando, cumprir as normas da GTM e seguir as orientações dos superiores.</p></div>
       </div>
     </section>
 
@@ -311,9 +308,6 @@
       </div>
     </section>
 
-
-    <section class="portal-view placeholder-view" data-view-panel="ponto" id="pontoPortal"><div class="point-portal-shell"><p class="eyebrow">ÁREA OPERACIONAL</p><h2>Cadastro / Bater Ponto</h2><p>Seu ponto e histórico de serviço aparecem abaixo. Para encerrar a sessão, use o botão Sair dentro do painel.</p><iframe id="gtmPointFrame" title="Bater ponto G.T.M." src="https://script.google.com/macros/s/AKfycbxyLa4TCEOF1JLC8nQ5jDp_NDXDKTUoj0i4-HtQHzMqLjIwqjTYhqM7BOVGclocFMpb/exec?pagina=acesso"></iframe></div></section>
-
     <footer id="portalFooter">
       <img src="assets/logo.png" alt="">
       <p>G.T.M. Villa · Manual de Conduta</p>
@@ -337,32 +331,5 @@
   </style>
 
   <script src="script.js"></script>
-
-<script id="gtmAuthBridge">
-(function(){
- const gate=document.getElementById('gtmAuthGate');
- const authFrame=document.getElementById('gtmAuthFrame');
- const pointFrame=document.getElementById('gtmPointFrame');
- let unlocked=false;let currentToken='';
- pointFrame.addEventListener('load',function(){if(currentToken){try{pointFrame.contentWindow.postMessage({type:'GTM_SET_SESSION',token:currentToken},'*')}catch(e){}}});
- function lockPortal(){unlocked=false;document.body.classList.add('gtm-locked');gate.style.display='flex';}
- window.addEventListener('message',function(event){
-   if(event.source!==authFrame.contentWindow && event.source!==pointFrame.contentWindow) return;
-   const d=event.data||{};
-   if(d.type==='GTM_AUTHENTICATED'){
-     if(typeof d.token==='string') currentToken=d.token;
-     unlocked=true;gate.style.display='none';document.body.classList.remove('gtm-locked');
-     if(event.source===authFrame.contentWindow){
-       // O token fica no sessionStorage do iframe de acesso. A página de ponto usa seu próprio iframe/sessão.
-       // Para evitar pedir login novamente, mantemos o iframe de acesso autenticado e sincronizamos a sessão quando solicitado.
-       try{pointFrame.contentWindow.postMessage({type:'GTM_SET_SESSION',token:currentToken},'*')}catch(e){}
-     }
-   } else if(d.type==='GTM_LOGGED_OUT'){ lockPortal(); }
- });
- // O portal inicia bloqueado; só o Apps Script libera após autenticação válida.
- lockPortal();
-})();
-</script>
-
 </body>
 </html>
